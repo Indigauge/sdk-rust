@@ -1,11 +1,7 @@
 use std::time::Instant;
 
-use crate::{
-  api_types::{EventPayload, EventPayloadCtx},
-  event::resources::QueuedEvent,
-  plugin::GLOBAL_TX,
-  session::SESSION_START_INSTANT,
-};
+use crate::{event::resources::QueuedEvent, plugin::GLOBAL_TX, session::SESSION_START_INSTANT};
+use indigauge_types::prelude::{EventPayload, EventPayloadCtx};
 
 #[inline]
 pub fn enqueue(

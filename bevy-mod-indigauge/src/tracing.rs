@@ -1,12 +1,42 @@
+use crate::config::BevyIndigaugeLogLevel;
 use crate::event::utils::{enqueue, validate_event_type};
-use crate::prelude::IndigaugeLogLevel;
 use bevy::utils::tracing::{Event, Subscriber, field::Field};
+use indigauge_types::prelude::IndigaugeLogLevel;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use tracing_subscriber::{Layer, field::Visit, layer::Context, registry::LookupSpan};
 
 const EVENT_TYPE_FIELDS: &[&str] = &["ig", "event_type"];
+
+#[cfg(feature = "tracing")]
+impl BevyIndigaugeLogLevel {
+  pub fn as_str(&self) -> &'static str {
+    match **self {
+      IndigaugeLogLevel::Debug => "debug",
+      IndigaugeLogLevel::Info => "info",
+      IndigaugeLogLevel::Warn => "warn",
+      IndigaugeLogLevel::Error => "error",
+      IndigaugeLogLevel::Silent => "silent",
+    }
+  }
+}
+
+#[cfg(feature = "tracing")]
+use bevy::utils::tracing::Level;
+
+#[cfg(feature = "tracing")]
+impl From<&Level> for BevyIndigaugeLogLevel {
+  fn from(level: &Level) -> Self {
+    match *level {
+      Level::ERROR => BevyIndigaugeLogLevel(IndigaugeLogLevel::Error),
+      Level::WARN => BevyIndigaugeLogLevel(IndigaugeLogLevel::Warn),
+      Level::INFO => BevyIndigaugeLogLevel(IndigaugeLogLevel::Info),
+      Level::DEBUG => BevyIndigaugeLogLevel(IndigaugeLogLevel::Debug),
+      Level::TRACE => BevyIndigaugeLogLevel(IndigaugeLogLevel::Silent),
+    }
+  }
+}
 
 trait IndigaugeSink: Send + Sync + 'static {
   fn log(
@@ -180,7 +210,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for IndigaugeLayer {
       return;
     }
 
-    let level = IndigaugeLogLevel::from(metadata.level());
+    let level = BevyIndigaugeLogLevel::from(metadata.level());
 
     if !self.levels.contains(&level) {
       return;
@@ -209,7 +239,7 @@ impl<S: Subscriber + for<'a> LookupSpan<'a>> Layer<S> for IndigaugeLayer {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api_types::{EventPayload, EventPayloadCtx};
+  use indigauge_types::prelude::{EventPayload, EventPayloadCtx};
 
   use serde_json::json;
   use std::sync::{Arc, Mutex};

@@ -157,16 +157,13 @@ pub fn panic_handler(
   host_origin: String,
   session_api_key: String,
 ) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
-  use crate::{
-    api_types::{EventPayload, EventPayloadCtx},
-    session::SESSION_START_INSTANT,
-  };
+  use crate::session::SESSION_START_INSTANT;
   use serde_json::json;
   use std::time::Instant;
 
   move |info| {
     if let Some(start_instant) = SESSION_START_INSTANT.get() {
-      use crate::api_types::StartSessionResponse;
+      use indigauge_types::prelude::{EventPayload, EventPayloadCtx, StartSessionResponse};
       if session_api_key == StartSessionResponse::dev().session_token {
         return;
       }

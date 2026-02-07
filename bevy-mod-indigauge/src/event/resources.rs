@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use bevy::prelude::*;
 use crossbeam_channel::Receiver;
 
-use crate::api_types::EventPayload;
+use indigauge_types::prelude::EventPayload;
 
 #[derive(Clone, Debug)]
 pub struct QueuedEvent {
