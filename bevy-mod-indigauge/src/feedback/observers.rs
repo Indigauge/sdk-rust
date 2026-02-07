@@ -7,9 +7,9 @@ use bevy::{
 };
 use bevy_mod_reqwest::ReqwestResponseEvent;
 use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
+use indigauge_types::prelude::{FeedbackPayload, IdResponse};
 
 use crate::{
-  api_types::{FeedbackPayload, IdResponse},
   feedback::components::{CategoryButtonText, CategoryItem, FeedbackPanel, MessageInput, ScreenshotToggleText},
   feedback::resources::{FeedbackFormState, TakeScreenshot},
   prelude::*,
@@ -154,12 +154,12 @@ fn maybe_take_screenshot(
               .is_ok()
             {
               ig.send_feedback_screenshot(&api_key, &feedback_id, png);
-            } else if *ig.log_level <= IndigaugeLogLevel::Error {
+            } else if **ig.log_level <= IndigaugeLogLevel::Error {
               error!(message = "Failed to encode screenshot as PNG");
             }
           },
           Err(error) => {
-            if *ig.log_level <= IndigaugeLogLevel::Error {
+            if **ig.log_level <= IndigaugeLogLevel::Error {
               error!(message = "Failed to convert screenshot into dynamic image", ?error);
             }
           },

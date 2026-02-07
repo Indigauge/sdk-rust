@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use bevy_mod_reqwest::ReqwestPlugin;
 use crossbeam_channel::{Sender, bounded};
+use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 
@@ -22,19 +23,19 @@ pub struct IndigaugePlugin<Meta = EmptySessionMeta> {
   /// Defaults to cargo package name
   game_name: String,
   game_version: String,
-  log_level: IndigaugeLogLevel,
-  mode: IndigaugeMode,
+  log_level: BevyIndigaugeLogLevel,
+  mode: BevyIndigaugeMode,
   meta: PhantomData<Meta>,
 }
 
 impl<M> IndigaugePlugin<M> {
   pub fn log_level(mut self, log_level: IndigaugeLogLevel) -> Self {
-    self.log_level = log_level;
+    self.log_level = BevyIndigaugeLogLevel(log_level);
     self
   }
 
   pub fn mode(mut self, mode: IndigaugeMode) -> Self {
-    self.mode = mode;
+    self.mode = BevyIndigaugeMode(mode);
     self
   }
 }
@@ -62,8 +63,8 @@ where
       game_name: env!("CARGO_PKG_NAME").to_string(),
       public_key: std::env::var("INDIGAUGE_PUBLIC_KEY").unwrap_or_default(),
       game_version: env!("CARGO_PKG_VERSION").to_string(),
-      log_level: IndigaugeLogLevel::Info,
-      mode: IndigaugeMode::default(),
+      log_level: BevyIndigaugeLogLevel(IndigaugeLogLevel::Info),
+      mode: BevyIndigaugeMode::default(),
       meta: PhantomData,
     }
   }
@@ -74,22 +75,22 @@ where
   M: Resource + Serialize,
 {
   fn build(&self, app: &mut App) {
-    let config = IndigaugeConfig::new(&self.game_name, &self.public_key, &self.game_version);
+    let config = BevyIndigaugeConfig::new(&self.game_name, &self.public_key, &self.game_version);
 
-    if matches!(self.mode, IndigaugeMode::Live | IndigaugeMode::Dev) {
-      if config.public_key.is_empty() && self.mode == IndigaugeMode::Live {
-        if self.log_level <= IndigaugeLogLevel::Warn {
+    if matches!(*self.mode, IndigaugeMode::Live | IndigaugeMode::Dev) {
+      if !config.has_public_key() && *self.mode == IndigaugeMode::Live {
+        if *self.log_level <= IndigaugeLogLevel::Warn {
           warn!(
             "Indigauge public key is not set for live-mode. Please set the INDIGAUGE_PUBLIC_KEY environment variable to start sessions and send events."
           );
         }
       } else if GLOBAL_TX.get().is_none() {
-        if config.public_key.is_empty() && self.log_level <= IndigaugeLogLevel::Info {
+        if !config.has_public_key() && *self.log_level <= IndigaugeLogLevel::Info {
           info!(
             "Indigauge public key is not set for dev-mode. Logs will still be shown in the console, but not sent to the server."
           );
         }
-        let (tx, rx) = bounded::<QueuedEvent>(config.max_queue);
+        let (tx, rx) = bounded::<QueuedEvent>(config.max_queue());
         GLOBAL_TX.set(tx).ok();
 
         app.insert_resource(EventQueueReceiver::new(rx));
@@ -101,7 +102,7 @@ where
 
     app
       .add_plugins(ReqwestPlugin::default())
-      .add_plugins((EventsPlugin::new(config.flush_interval), SessionPlugin::<M>::new(config.flush_interval)))
+      .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
       .insert_resource(self.mode.clone())

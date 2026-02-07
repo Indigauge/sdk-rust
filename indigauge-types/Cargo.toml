@@ -1,0 +1,12 @@
+[package]
+name = "indigauge-types"
+version = "0.2.2"
+edition = "2024"
+
+[features]
+default = ["feedback"]
+feedback = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

@@ -1,4 +1,3 @@
-mod api_types;
 pub(crate) mod utils;
 
 pub(crate) mod config;
@@ -14,7 +13,9 @@ pub(crate) mod session;
 pub mod tracing;
 
 pub mod prelude {
-  pub use crate::config::{IndigaugeLogLevel, IndigaugeMode};
+  pub use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
+
+  pub use crate::config::{BevyIndigaugeLogLevel, BevyIndigaugeMode};
   pub use crate::event::utils::{enqueue, validate_event_type_compile_time};
 
   #[cfg(feature = "feedback")]
