@@ -14,21 +14,5 @@ impl BevyIndigaugeConfig {
 #[derive(Resource, Clone, Deref)]
 pub struct BevyIndigaugeLogLevel(pub IndigaugeLogLevel);
 
-#[cfg(feature = "tracing")]
-use bevy::utils::tracing::Level;
-
-#[cfg(feature = "tracing")]
-impl From<&Level> for IndigaugeLogLevel {
-  fn from(level: &Level) -> Self {
-    match *level {
-      Level::ERROR => BevyIndigaugeLogLevel::Error,
-      Level::WARN => BevyIndigaugeLogLevel::Warn,
-      Level::INFO => BevyIndigaugeLogLevel::Info,
-      Level::DEBUG => BevyIndigaugeLogLevel::Debug,
-      Level::TRACE => BevyIndigaugeLogLevel::Trace,
-    }
-  }
-}
-
 #[derive(Resource, Default, Clone, Deref)]
 pub struct BevyIndigaugeMode(pub IndigaugeMode);
