@@ -4,7 +4,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::{
   ig_info,
   prelude::{
-    BevyIndigaugeLogLevel, EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeMode,
+    EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeLogLevel, IndigaugeMode,
     IndigaugePlugin, StartSessionEvent,
   },
 };
@@ -27,7 +27,7 @@ fn main() {
       // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
       .mode(IndigaugeMode::Dev)
       // Optional: Set preferred log-level (Defaults to Info)
-      .log_level(BevyIndigaugeLogLevel::Info),
+      .log_level(IndigaugeLogLevel::Info),
     )
     // Optional: Customize the feedback panel styles
     .insert_resource(FeedbackPanelStyles {
