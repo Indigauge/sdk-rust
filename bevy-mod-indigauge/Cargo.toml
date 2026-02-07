@@ -17,9 +17,10 @@ include = ["src/**/*", "README.md", "LICENSE", "Cargo.toml"]
 all-features = true
 
 [features]
-default = ["panic_handler"]
+default = ["panic_handler", "feedback"]
 panic_handler = ["dep:reqwest"]
 tracing = ["dep:tracing-subscriber"]
+feedback = []
 
 [dependencies]
 bevy = { version = "0.15", default-features = false, features = [
