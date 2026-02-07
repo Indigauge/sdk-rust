@@ -54,7 +54,9 @@ tracing = { version = "0.1" }
 [[example]]
 name = "minimal"
 path = "examples/minimal.rs"
+required-features = ["default"]
 
 [[example]]
 name = "breakout"
 path = "examples/breakout.rs"
+required-features = ["default"]
