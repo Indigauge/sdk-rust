@@ -15,6 +15,7 @@ pub struct ErrorBody {
   pub message: String,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
 pub struct IdResponse {
   pub id: String,
@@ -83,6 +84,7 @@ pub struct EventPayloadCtx {
   pub module: Option<&'static str>,
 }
 
+#[cfg(feature = "feedback")]
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedbackPayload<'a> {

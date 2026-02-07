@@ -12,7 +12,6 @@ use crate::{
     EventsPlugin,
     resources::{BufferedEvents, EventQueueReceiver, QueuedEvent},
   },
-  feedback::FeedbackUiPlugin,
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
 
@@ -97,13 +96,12 @@ where
       }
     }
 
+    #[cfg(feature = "feedback")]
+    app.add_plugins(crate::feedback::FeedbackUiPlugin);
+
     app
       .add_plugins(ReqwestPlugin::default())
-      .add_plugins((
-        FeedbackUiPlugin,
-        EventsPlugin::new(config.flush_interval),
-        SessionPlugin::<M>::new(config.flush_interval),
-      ))
+      .add_plugins((EventsPlugin::new(config.flush_interval), SessionPlugin::<M>::new(config.flush_interval)))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
       .insert_resource(self.mode.clone())

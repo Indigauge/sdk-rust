@@ -3,7 +3,10 @@ pub(crate) mod utils;
 
 pub(crate) mod config;
 pub(crate) mod event;
+
+#[cfg(feature = "feedback")]
 pub(crate) mod feedback;
+
 pub mod plugin;
 pub(crate) mod session;
 
@@ -13,7 +16,10 @@ pub mod tracing;
 pub mod prelude {
   pub use crate::config::{IndigaugeLogLevel, IndigaugeMode};
   pub use crate::event::utils::{enqueue, validate_event_type_compile_time};
+
+  #[cfg(feature = "feedback")]
   pub use crate::feedback::observers::{switch_state_on_feedback_despawn, switch_state_on_feedback_spawn};
+  #[cfg(feature = "feedback")]
   pub use crate::feedback::{
     resources::{FeedbackKeyCodeToggle, FeedbackPanelProps, FeedbackPanelStyles},
     types::{FeedbackCategory, FeedbackSpawnPosition},

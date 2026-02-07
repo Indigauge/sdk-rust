@@ -1,16 +1,22 @@
-use bevy::ecs::bundle::Bundle;
 use bevy::ecs::observer::Trigger;
-use bevy::ecs::system::{IntoObserverSystem, Res, ResMut, SystemParam};
+use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
 use bevy_mod_reqwest::reqwest::{Error as ReqwestError, Request};
 use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use serde::Serialize;
 use serde_json::json;
 
-use crate::api_types::{BatchEventPayload, FeedbackPayload};
+use crate::api_types::BatchEventPayload;
 use crate::config::*;
 use crate::event::resources::BufferedEvents;
 
+#[cfg(feature = "feedback")]
+use crate::api_types::FeedbackPayload;
+
+#[cfg(feature = "feedback")]
+use bevy::ecs::{bundle::Bundle, system::IntoObserverSystem};
+
+#[allow(unused)]
 pub fn select<T>(true_case: T, false_case: T, condition: bool) -> T {
   if condition { true_case } else { false_case }
 }
@@ -57,6 +63,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
       .build()
   }
 
+  #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
     match *self.mode {
       IndigaugeMode::Live => {
@@ -101,6 +108,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     }
   }
 
+  #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback<RB, RM, OR>(&mut self, api_key: &str, payload: &FeedbackPayload, on_response: OR)
   where
     RB: Bundle,
