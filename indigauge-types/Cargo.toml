@@ -4,12 +4,15 @@ version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Common types for indigauge protocol"
-repository = "https://github.com/Indigauge/sdk-rust/indigauge-types"
+repository = "https://github.com/Indigauge/sdk-rust/tree/main/indigauge-types"
 homepage = "https://www.indigauge.com"
 documentation = "https://docs.rs/indigauge-types"
 keywords = ["indigauge", "feedback", "events", "indie", "game"]
 categories = ["development-tools", "game-development"]
 readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
 
 [features]
 default = ["feedback"]

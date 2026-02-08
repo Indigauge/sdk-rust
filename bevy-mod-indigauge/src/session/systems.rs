@@ -1,9 +1,10 @@
 use bevy::prelude::*;
+use indigauge_types::prelude::IndigaugeLogLevel;
 use serde::Serialize;
 use serde_json::json;
 
 use crate::{
-  prelude::StartSessionEvent,
+  prelude::{EmptySessionMeta, StartSessionEvent},
   session::resources::{SessionApiKey, SessionMeta},
   utils::BevyIndigauge,
 };
@@ -99,7 +100,7 @@ where
 
 pub(crate) fn update_metadata<M>(
   mut session_meta: ResMut<SessionMeta<M>>,
-  metadata: Res<M>,
+  metadata: Option<Res<M>>,
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
 ) where
@@ -108,6 +109,13 @@ pub(crate) fn update_metadata<M>(
   if session_meta.is_changed {
     session_meta.is_changed = false;
 
-    ig.update_metadata(&*metadata, &session_key);
+    if let Some(metadata_resource) = metadata {
+      ig.update_metadata(&*metadata_resource, &session_key);
+    } else {
+      let type_name = std::any::type_name::<M>();
+      if type_name.ne(std::any::type_name::<EmptySessionMeta>()) && **ig.log_level <= IndigaugeLogLevel::Warn {
+        warn!(message = "Metadata changed, but did not exist as a resource", type = type_name);
+      }
+    }
   }
 }
