@@ -67,7 +67,7 @@ impl IndigaugeConfig {
   }
 }
 
-#[derive(PartialEq, PartialOrd, Clone)]
+#[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum IndigaugeLogLevel {
   Debug,
   Info,
@@ -76,7 +76,7 @@ pub enum IndigaugeLogLevel {
   Silent,
 }
 
-#[derive(PartialEq, Default, Clone)]
+#[derive(PartialEq, Default, Clone, Debug)]
 pub enum IndigaugeMode {
   /// Live mode sends data to the Indigauge API.
   #[default]

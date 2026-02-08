@@ -22,7 +22,7 @@ fn main() {
       IndigaugePlugin::<EmptySessionMeta>::new(
         "YOUR_PUBLIC_KEY",
         Some("Your game name (defaults to `CARGO_PKG_NAME` if not provided)".to_string()),
-        Some("Your game version (defaults to `CARGO_PKG_VERSION` if not provided)".to_string()),
+        Some("Your game version (defaults to `CARGO_PKG_VERSION` of bevy-mod-indigauge if not provided)".to_string()),
       )
       // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
       .mode(IndigaugeMode::Dev)

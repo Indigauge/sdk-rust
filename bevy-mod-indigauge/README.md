@@ -1,6 +1,6 @@
 # Indigauge Game SDK (Bevy)
 
-The **Indigauge Game SDK** is a lightweight Rust library for sending structured analytics and player feedback from your **Bevy** games to the [Indigauge](https://ingest.indigauge.com/v1/docs) API.
+The **Indigauge Game SDK** is a lightweight Rust library for sending structured analytics and player feedback from your **Bevy** games to the [Indigauge](https://www.indigauge.com) API.
 
 It’s designed to be easy to integrate and is powerful enough for production use in indie games.
 
@@ -60,7 +60,7 @@ fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
     .add_plugins(
-      IndigaugePlugin::new(
+      IndigaugePlugin::<EmptySessionMeta>::new(
         "YOUR_PUBLIC_KEY",
         Some("Your game name (defaults to `CARGO_PKG_NAME` if not provided)".to_string()),
         Some("Your game version (defaults to `CARGO_PKG_VERSION` if not provided)".to_string())
@@ -70,22 +70,6 @@ fn main() {
       // Optional: Set preferred log-level (Defaults to Info)
       .log_level(IndigaugeLogLevel::Info)
     )
-    // Optional: Customize the feedback panel styles
-    .insert_resource(FeedbackPanelStyles {
-      primary: Color::srgb_u8(147, 164, 255),
-      primary_hover: Color::srgb_u8(124, 140, 250),
-      secondary: Color::srgb_u8(147, 164, 255),
-      secondary_hover: Color::srgb_u8(124, 140, 250),
-      background: Color::srgb_u8(15, 23, 42),
-      surface: Color::srgb_u8(30, 41, 59),
-      border: Color::srgb_u8(51, 65, 85),
-      text_primary: Color::srgb_u8(248, 250, 252),
-      text_secondary: Color::srgb_u8(203, 213, 225),
-      success: Color::srgb_u8(34, 197, 94),
-      error: Color::srgb_u8(248, 113, 113),
-      warning: Color::srgb_u8(250, 204, 21),
-      accent: Color::srgb_u8(168, 85, 247),
-    })
     .add_systems(Startup, setup)
     .add_systems(Update, (trigger_feedback_with_question, track_counter.run_if(on_timer(Duration::from_secs(2)))))
     .run();
