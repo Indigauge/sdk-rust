@@ -11,6 +11,9 @@ keywords = ["indigauge", "feedback", "events", "indie", "game"]
 categories = ["development-tools", "game-development"]
 readme = "README.md"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = ["feedback"]
 feedback = []
