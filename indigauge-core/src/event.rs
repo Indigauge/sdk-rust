@@ -140,8 +140,8 @@ pub mod macros {
   /// Usage example: `ig_event!(info, "ui.click", { "button": btn_id, "x": x, "y": y });`
   ///
   /// The `event_type` must be a string literal in the form `"namespace.event"` and
-  /// is compile-time validated by [`validate_event_type_compile_time`] to ensure it
-  /// contains exactly one `.` and only letters on each side. Metadata is encoded as
+  /// is compile-time validated to ensure it contains exactly one `.` and
+  /// only letters on each side. Metadata is encoded as
   /// JSON using a shorthand object literal with string keys.
   #[macro_export]
   macro_rules! ig_event {
@@ -162,9 +162,8 @@ pub mod macros {
   /// ```
   ///
   /// * `<event_type>` — must be a string literal formatted as "namespace.event",
-  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated by
-  ///   [`validate_event_type_compile_time`] to ensure it contains exactly one `.` and
-  ///   only letters on each side.
+  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated
+  ///   to ensure it contains exactly one `.` and only letters on each side.
   /// * Optional metadata can be passed as a JSON-like key/value list.
   ///
   /// # Examples
@@ -185,9 +184,8 @@ pub mod macros {
   /// ```
   ///
   /// * `<event_type>` — must be a string literal formatted as "namespace.event",
-  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated by
-  ///   [`validate_event_type_compile_time`] to ensure it contains exactly one `.` and
-  ///   only letters on each side.
+  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated
+  ///   to ensure it contains exactly one `.` and only letters on each side.
   /// * Optional metadata can be passed as a JSON-like key/value list.
   ///
   /// # Examples
@@ -210,9 +208,8 @@ pub mod macros {
   /// ```
   ///
   /// * `<event_type>` — must be a string literal formatted as "namespace.event",
-  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated by
-  ///   [`validate_event_type_compile_time`] to ensure it contains exactly one `.` and
-  ///   only letters on each side.
+  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated
+  ///   to ensure it contains exactly one `.` and only letters on each side.
   /// * Optional metadata can be passed as a JSON-like key/value list.
   ///
   /// # Examples
@@ -236,9 +233,8 @@ pub mod macros {
   /// ```
   ///
   /// * `<event_type>` — must be a string literal formatted as "namespace.event",
-  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated by
-  ///   [`validate_event_type_compile_time`] to ensure it contains exactly one `.` and
-  ///   only letters on each side.
+  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated
+  ///   to ensure it contains exactly one `.` and only letters on each side.
   /// * Optional metadata can be passed as a JSON-like key/value list.
   ///
   /// # Examples
@@ -261,9 +257,8 @@ pub mod macros {
   /// ```
   ///
   /// * `<event_type>` — must be a string literal formatted as "namespace.event",
-  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated by
-  ///   [`validate_event_type_compile_time`] to ensure it contains exactly one `.` and
-  ///   only letters on each side.
+  ///   e.g. "ui.click", "gameplay.start". The value is compile-time validated
+  ///   to ensure it contains exactly one `.` and only letters on each side.
   /// * Optional metadata can be passed as a JSON-like key/value list.
   ///
   /// # Examples
