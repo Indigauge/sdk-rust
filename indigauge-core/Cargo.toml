@@ -1,6 +1,17 @@
 [package]
 name = "indigauge-core"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
 
+[features]
+default = []
+panic_handler = ["reqwest"]
+
 [dependencies]
+indigauge-types = { path = "../indigauge-types", version = "0.3.0" }
+serde_json.workspace = true
+
+[dependencies.reqwest]
+version = "0.12"
+features = ["json", "blocking"]
+optional = true

@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use bevy_mod_reqwest::ReqwestPlugin;
 use crossbeam_channel::{Sender, bounded};
+use indigauge_core::event::QueuedEvent;
 use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
@@ -11,7 +12,7 @@ use crate::{
   config::*,
   event::{
     EventsPlugin,
-    resources::{BufferedEvents, EventQueueReceiver, QueuedEvent},
+    resources::{BufferedEvents, EventQueueReceiver},
   },
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
