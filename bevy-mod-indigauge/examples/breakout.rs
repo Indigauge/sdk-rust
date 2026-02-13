@@ -1,5 +1,7 @@
 //! Copied from the Bevy repository and added the Indigauge plugin
 
+use std::env;
+
 use bevy::log::BoxedLayer;
 use bevy::{
   log::LogPlugin,
@@ -82,7 +84,7 @@ fn main() {
       ..default()
     }))
     .insert_state(GameState::default())
-    .add_plugins(IndigaugePlugin::<Score>::default())
+    .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")))
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_event::<CollisionEvent>()

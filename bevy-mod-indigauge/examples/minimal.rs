@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{env, time::Duration};
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::prelude::{
@@ -16,15 +16,11 @@ fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
     .add_plugins(
-      IndigaugePlugin::<EmptySessionMeta>::new(
-        "YOUR_PUBLIC_KEY",
-        Some("Your game name (defaults to `CARGO_PKG_NAME` if not provided)".to_string()),
-        Some("Your game version (defaults to `CARGO_PKG_VERSION` if not provided)".to_string()),
-      )
-      // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
-      .mode(IndigaugeMode::Dev)
-      // Optional: Set preferred log-level (Defaults to Info)
-      .log_level(IndigaugeLogLevel::Info),
+      IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "My minimal game", env!("CARGO_PKG_VERSION"))
+        // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
+        .mode(IndigaugeMode::Dev)
+        // Optional: Set preferred log-level (Defaults to Info)
+        .log_level(IndigaugeLogLevel::Info),
     )
     // Optional: Customize the feedback panel styles
     .insert_resource(FeedbackPanelStyles {

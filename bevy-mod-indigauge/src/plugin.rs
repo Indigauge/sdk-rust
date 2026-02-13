@@ -45,11 +45,11 @@ impl<M> IndigaugePlugin<M>
 where
   M: Resource + Serialize,
 {
-  pub fn new(public_key: impl Into<String>, game_name: Option<String>, game_version: Option<String>) -> Self {
+  pub fn new(public_key: impl Into<String>, game_name: impl Into<String>, game_version: impl Into<String>) -> Self {
     Self {
       public_key: public_key.into(),
-      game_name: game_name.unwrap_or_else(|| env!("CARGO_PKG_NAME").to_string()),
-      game_version: game_version.unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string()),
+      game_name: game_name.into(),
+      game_version: game_version.into(),
       ..Default::default()
     }
   }
