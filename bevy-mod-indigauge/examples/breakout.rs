@@ -1,12 +1,14 @@
 //! Copied from the Bevy repository and added the Indigauge plugin
 
+use std::env;
+
 use bevy::log::BoxedLayer;
 use bevy::{
   log::LogPlugin,
   math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
   prelude::*,
 };
-use bevy_mod_indigauge::{ig_info, prelude::*};
+use bevy_mod_indigauge::prelude::*;
 use serde::Serialize;
 
 // These constants are defined in `Transform` units.
@@ -67,7 +69,7 @@ enum GameState {
 
 #[cfg(feature = "tracing")]
 pub fn indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
-  Some(Box::new(bevy_mod_indigauge::tracing::IndigaugeLayer::default()))
+  Some(Box::new(bevy_mod_indigauge::tracing::default_bevy_indigauge_layer()))
 }
 
 #[cfg(not(feature = "tracing"))]
@@ -82,7 +84,7 @@ fn main() {
       ..default()
     }))
     .insert_state(GameState::default())
-    .add_plugins(IndigaugePlugin::<Score>::default())
+    .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")))
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_event::<CollisionEvent>()

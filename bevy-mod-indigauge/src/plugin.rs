@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use bevy_mod_reqwest::ReqwestPlugin;
 use crossbeam_channel::{Sender, bounded};
+use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
 use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
@@ -11,7 +12,7 @@ use crate::{
   config::*,
   event::{
     EventsPlugin,
-    resources::{BufferedEvents, EventQueueReceiver, QueuedEvent},
+    resources::{BufferedEvents, EventQueueReceiver},
   },
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
@@ -44,11 +45,11 @@ impl<M> IndigaugePlugin<M>
 where
   M: Resource + Serialize,
 {
-  pub fn new(public_key: impl Into<String>, game_name: Option<String>, game_version: Option<String>) -> Self {
+  pub fn new(public_key: impl Into<String>, game_name: impl Into<String>, game_version: impl Into<String>) -> Self {
     Self {
       public_key: public_key.into(),
-      game_name: game_name.unwrap_or_else(|| env!("CARGO_PKG_NAME").to_string()),
-      game_version: game_version.unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string()),
+      game_name: game_name.into(),
+      game_version: game_version.into(),
       ..Default::default()
     }
   }
@@ -92,6 +93,9 @@ where
         }
         let (tx, rx) = bounded::<QueuedEvent>(config.max_queue());
         GLOBAL_TX.set(tx).ok();
+
+        // Register the event dispatcher used by core macros.
+        set_event_dispatcher(crate::event::utils::enqueue);
 
         app.insert_resource(EventQueueReceiver::new(rx));
       }

@@ -51,10 +51,10 @@ cargo run --release --example breakout --features tracing
 * Create a public key for the game.
 * Add the plugin to your game.
 
-```rust
+```rust,ignore
 use std::time::Duration;
 use bevy::{prelude::*, time::common_conditions::on_timer};
-use bevy_mod_indigauge::prelude::{*, ig_info};
+use bevy_mod_indigauge::prelude::*;
 
 fn main() {
   App::new()
@@ -62,8 +62,8 @@ fn main() {
     .add_plugins(
       IndigaugePlugin::<EmptySessionMeta>::new(
         "YOUR_PUBLIC_KEY",
-        Some("Your game name (defaults to `CARGO_PKG_NAME` if not provided)".to_string()),
-        Some("Your game version (defaults to `CARGO_PKG_VERSION` if not provided)".to_string())
+        "My game name"),
+        env!("CARGO_PKG_VERSION")
       )
       // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
       .mode(IndigaugeMode::Dev)
@@ -102,7 +102,7 @@ fn track_counter(mut counter: Local<u32>) {
 
 Send structured events with macros. The events will only be sent if a session was successfully started.
 
-```rust
+```rust,ignore
 ig_info!("player.jump", { "height": 2.4 });
 ig_error!("physics.failed", { "component": "rigid_body" });
 ```
@@ -119,20 +119,21 @@ bevy = { version = "0.15", features = ["bevy_mod_indigauge"] }
 bevy-mod-indigauge = { version = "0.2", features = ["tracing"] }
 ```
 
-```rust
-use bevy::{log::{LogPlugin, BoxedLayer}, prelude::*};
-use bevy_mod_indigauge::{prelude::*, tracing::IndigaugeLayer};
+```rust,ignore
+use std::time::Duration;
+use bevy::{log::{LogPlugin, BoxedLayer}, prelude::*, time::common_conditions::on_timer};
+use bevy_mod_indigauge::{prelude::*, tracing::{IndigaugeLayer, default_bevy_indigauge_layer}};
 
 /// Default tracing layer, will send all events to the Indigauge API.
 pub fn default_indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
-  Some(Box::new(IndigaugeLayer::default()))
+  Some(Box::new(default_bevy_indigauge_layer()))
 }
 
 /// Custom tracing layer, will only send events that has an event_type, is either info, warn, or 
 /// error and is not from the bevy_mod_othercrate module to the Indigauge API.
 pub fn custom_indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
   Some(Box::new(
-    IndigaugeLayer::default()
+    default_bevy_indigauge_layer()
       .with_event_type_required(true) 
       .with_filters(vec!["bevy_mod_othercrate"])
       .with_levels(vec![
@@ -146,7 +147,7 @@ pub fn custom_indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins.set(LogPlugin {custom_layer: custom_indigauge_layer, ..default()}))
-    .add_plugin(IndigaugePlugin::new("YOUR_PUBLIC_KEY", None, None))
+    .add_plugins(IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "My game name", env!("CARGO_PKG_VERSION")))
     .add_systems(Startup, setup)
     .add_systems(Update, (track_counter.run_if(on_timer(Duration::from_secs(2)))))
     .run();
@@ -166,6 +167,5 @@ fn track_counter(mut counter: Local<u32>) {
 ## Bevy Compatibility
 
 | bevy   | bevy-mod-indigauge |
-| ------ | ---------------- |
-| 0.15   | 0.2             |
-| 0.15   | 0.1             |
+| ------ | ------------------ |
+| 0.15   | 0.1, 0.2, 0.3      |

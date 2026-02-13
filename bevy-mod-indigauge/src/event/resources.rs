@@ -3,32 +3,7 @@ use std::ops::{Deref, DerefMut};
 use bevy::prelude::*;
 use crossbeam_channel::Receiver;
 
-use indigauge_types::prelude::EventPayload;
-
-#[derive(Clone, Debug)]
-pub struct QueuedEvent {
-  payload: EventPayload,
-}
-
-impl QueuedEvent {
-  pub fn new(payload: EventPayload) -> Self {
-    Self { payload }
-  }
-
-  pub fn into_inner(self) -> EventPayload {
-    self.payload
-  }
-
-  pub fn validate(&self) -> Result<(), String> {
-    // Add validation logic here
-    let (ns, t) = self.payload.event_type.split_once('.').ok_or("Invalid event type")?;
-    if ns.trim().is_empty() || t.trim().is_empty() {
-      return Err("Invalid event type".to_string());
-    }
-
-    Ok(())
-  }
-}
+use indigauge_core::event::QueuedEvent;
 
 #[derive(Resource)]
 pub struct EventQueueReceiver {
