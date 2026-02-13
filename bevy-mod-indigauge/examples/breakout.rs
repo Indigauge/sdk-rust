@@ -6,7 +6,7 @@ use bevy::{
   math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
   prelude::*,
 };
-use bevy_mod_indigauge::{ig_info, prelude::*};
+use bevy_mod_indigauge::prelude::*;
 use serde::Serialize;
 
 // These constants are defined in `Transform` units.

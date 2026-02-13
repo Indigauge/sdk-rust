@@ -54,7 +54,7 @@ cargo run --release --example breakout --features tracing
 ```rust
 use std::time::Duration;
 use bevy::{prelude::*, time::common_conditions::on_timer};
-use bevy_mod_indigauge::prelude::{*, ig_info};
+use bevy_mod_indigauge::prelude::*;
 
 fn main() {
   App::new()
@@ -182,6 +182,5 @@ fn track_counter(mut counter: Local<u32>) {
 ## Bevy Compatibility
 
 | bevy   | bevy-mod-indigauge |
-| ------ | ---------------- |
-| 0.15   | 0.2             |
-| 0.15   | 0.1             |
+| ------ | ------------------ |
+| 0.15   | 0.1, 0.2, 0.3      |

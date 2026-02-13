@@ -18,6 +18,7 @@ pub mod prelude {
   pub use crate::config::{BevyIndigaugeLogLevel, BevyIndigaugeMode};
   pub use crate::event::utils::enqueue;
   pub use indigauge_core::event::validate_event_type_compile_time;
+  pub use indigauge_core::{enqueue_ig_event, ig_debug, ig_error, ig_event, ig_info, ig_trace, ig_warn};
 
   #[cfg(feature = "feedback")]
   pub use crate::feedback::observers::{switch_state_on_feedback_despawn, switch_state_on_feedback_spawn};

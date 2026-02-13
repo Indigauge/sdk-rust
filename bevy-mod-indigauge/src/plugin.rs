@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use bevy_mod_reqwest::ReqwestPlugin;
 use crossbeam_channel::{Sender, bounded};
-use indigauge_core::event::QueuedEvent;
+use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
 use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
@@ -93,6 +93,9 @@ where
         }
         let (tx, rx) = bounded::<QueuedEvent>(config.max_queue());
         GLOBAL_TX.set(tx).ok();
+
+        // Register the event dispatcher used by core macros.
+        set_event_dispatcher(crate::event::utils::enqueue);
 
         app.insert_resource(EventQueueReceiver::new(rx));
       }
