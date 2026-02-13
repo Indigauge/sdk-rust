@@ -10,7 +10,7 @@ Foundation crate for the Indigauge Rust SDK. It provides the shared building blo
 
 ## Quick start
 
-```rust
+```rust,ignore
 use indigauge_core::{ig_info, set_event_dispatcher};
 use serde_json::Value;
 

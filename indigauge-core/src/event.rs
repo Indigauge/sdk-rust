@@ -115,7 +115,7 @@ pub mod macros {
   ///
   /// # Examples
   /// ```rust,no_run
-  /// use indigauge_core::{enqueue_ig_event, set_event_dispatcher};
+  /// use indigauge_core::{enqueue_ig_event, event::set_event_dispatcher};
   /// use serde_json::Value;
   ///
   /// fn dispatcher(_: &'static str, _: &str, _: Option<Value>, _: &'static str, _: u32, _: &'static str) -> bool {

@@ -1,9 +1,11 @@
 use crate::config::BevyIndigaugeLogLevel;
 use crate::event::utils::enqueue;
 use bevy::utils::tracing::Level;
-use indigauge_core::tracing::{IndigaugeLayer, IndigaugeSink};
+use indigauge_core::tracing::IndigaugeSink;
 use indigauge_types::prelude::IndigaugeLogLevel;
 use std::sync::Arc;
+
+pub use indigauge_core::tracing::IndigaugeLayer;
 
 impl BevyIndigaugeLogLevel {
   pub fn as_str(&self) -> &'static str {
