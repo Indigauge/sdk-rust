@@ -11,8 +11,8 @@ impl BevyIndigaugeConfig {
   }
 }
 
-#[derive(Resource, Clone, Deref)]
+#[derive(Resource, Clone, Deref, Debug)]
 pub struct BevyIndigaugeLogLevel(pub IndigaugeLogLevel);
 
-#[derive(Resource, Default, Clone, Deref)]
+#[derive(Resource, Default, Clone, Deref, Debug)]
 pub struct BevyIndigaugeMode(pub IndigaugeMode);
