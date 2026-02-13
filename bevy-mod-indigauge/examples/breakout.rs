@@ -67,7 +67,7 @@ enum GameState {
 
 #[cfg(feature = "tracing")]
 pub fn indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
-  Some(Box::new(bevy_mod_indigauge::tracing::IndigaugeLayer::default()))
+  Some(Box::new(bevy_mod_indigauge::tracing::default_bevy_indigauge_layer()))
 }
 
 #[cfg(not(feature = "tracing"))]

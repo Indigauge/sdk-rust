@@ -19,7 +19,7 @@ all-features = true
 [features]
 default = ["panic_handler", "feedback"]
 panic_handler = ["dep:reqwest", "indigauge-core/panic_handler"]
-tracing = ["dep:tracing-subscriber"]
+tracing = ["dep:tracing-subscriber", "indigauge-core/tracing"]
 feedback = ["bevy/bevy_ui", "bevy/bevy_picking", "bevy/bevy_ui_picking_backend", "dep:image", "dep:bevy_text_edit", "indigauge-types/feedback"]
 
 [dependencies]
