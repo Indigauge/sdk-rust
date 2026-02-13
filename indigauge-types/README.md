@@ -29,7 +29,7 @@ let payload = EventPayload {
   context: Some(EventPayloadCtx {
     file: "main.rs".to_string(),
     line: 42,
-    module: Some("game".to_string()),
+    module: Some("game"),
   }),
 };
 

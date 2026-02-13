@@ -84,7 +84,7 @@ fn trigger_feedback_with_question(
   mut commands: Commands,
   keys: Res<ButtonInput<KeyCode>>,
 ) {
-  if keys.just_pressed(KeyCode::F) {
+  if keys.just_pressed(KeyCode::KeyF) {
     // This is how you manually trigger the feedback panel
     commands.insert_resource(
       FeedbackPanelProps::with_question("What did you think about level 3?", FeedbackCategory::Gameplay),
