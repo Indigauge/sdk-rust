@@ -9,6 +9,9 @@ homepage = "https://www.indigauge.com"
 documentation = "https://docs.rs/indigauge-core"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = []
 panic_handler = ["reqwest"]

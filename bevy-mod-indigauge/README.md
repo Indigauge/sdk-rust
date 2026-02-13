@@ -51,7 +51,7 @@ cargo run --release --example breakout --features tracing
 * Create a public key for the game.
 * Add the plugin to your game.
 
-```rust,ignore
+```rust,no_run
 use std::time::Duration;
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::prelude::*;
@@ -62,7 +62,7 @@ fn main() {
     .add_plugins(
       IndigaugePlugin::<EmptySessionMeta>::new(
         "YOUR_PUBLIC_KEY",
-        "My game name"),
+        "My game name",
         env!("CARGO_PKG_VERSION")
       )
       // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
@@ -84,7 +84,7 @@ fn trigger_feedback_with_question(
   mut commands: Commands,
   keys: Res<ButtonInput<KeyCode>>,
 ) {
-  if keys.just_pressed(KeyCode::F) {
+  if keys.just_pressed(KeyCode::KeyF) {
     // This is how you manually trigger the feedback panel
     commands.insert_resource(
       FeedbackPanelProps::with_question("What did you think about level 3?", FeedbackCategory::Gameplay),
@@ -119,7 +119,7 @@ bevy = { version = "0.15", features = ["bevy_mod_indigauge"] }
 bevy-mod-indigauge = { version = "0.2", features = ["tracing"] }
 ```
 
-```rust,ignore
+```rust,no_run
 use std::time::Duration;
 use bevy::{log::{LogPlugin, BoxedLayer}, prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::{prelude::*, tracing::{IndigaugeLayer, default_bevy_indigauge_layer}};
