@@ -62,8 +62,8 @@ fn main() {
     .add_plugins(
       IndigaugePlugin::<EmptySessionMeta>::new(
         "YOUR_PUBLIC_KEY",
-        Some("Your game name (defaults to `CARGO_PKG_NAME` if not provided)".to_string()),
-        Some("Your game version (defaults to `CARGO_PKG_VERSION` if not provided)".to_string())
+        "My game name"),
+        env!("CARGO_PKG_VERSION")
       )
       // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
       .mode(IndigaugeMode::Dev)
@@ -146,7 +146,7 @@ pub fn custom_indigauge_layer(_app: &mut App) -> Option<BoxedLayer> {
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins.set(LogPlugin {custom_layer: custom_indigauge_layer, ..default()}))
-    .add_plugin(IndigaugePlugin::new("YOUR_PUBLIC_KEY", None, None))
+    .add_plugin(IndigaugePlugin::new("YOUR_PUBLIC_KEY", "My game name", env!("CARGO_PKG_VERSION")))
     .add_systems(Startup, setup)
     .add_systems(Update, (track_counter.run_if(on_timer(Duration::from_secs(2)))))
     .run();
