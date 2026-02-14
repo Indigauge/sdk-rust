@@ -10,12 +10,17 @@ use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
 use indigauge_types::prelude::{FeedbackPayload, IdResponse};
 
 use crate::{
-  feedback::components::{CategoryButtonText, CategoryItem, FeedbackPanel, MessageInput, ScreenshotToggleText},
+  feedback::components::FeedbackPanel,
   feedback::resources::{FeedbackFormState, TakeScreenshot},
   prelude::*,
   session::SESSION_START_INSTANT,
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
+};
+
+#[cfg(feature = "feedback_ui")]
+use crate::{
+  feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText},
   utils::select,
 };
 
@@ -39,10 +44,12 @@ where
   }
 }
 
+#[cfg(feature = "feedback_ui")]
 pub fn observe_category_dropdown_click(_trigger: Trigger<Pointer<Click>>, mut form: ResMut<FeedbackFormState>) {
   form.dropdown_open = !form.dropdown_open;
 }
 
+#[cfg(feature = "feedback_ui")]
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
@@ -62,6 +69,7 @@ pub fn observe_category_item_click(
   }
 }
 
+#[cfg(feature = "feedback_ui")]
 pub fn observe_screenshot_toggle_click(
   trigger: Trigger<Pointer<Click>>,
   styles: Res<FeedbackPanelStyles>,
@@ -83,10 +91,12 @@ pub fn observe_screenshot_toggle_click(
   }
 }
 
+#[cfg(feature = "feedback_ui")]
 pub fn observe_cancel_click(_trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
+#[cfg(feature = "feedback_ui")]
 pub fn observe_submit_click(
   _trigger: Trigger<Pointer<Click>>,
   mut commands: Commands,
@@ -95,13 +105,22 @@ pub fn observe_submit_click(
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
 ) {
+  form.message = q_input.get_single().map(|s| s.to_string()).unwrap_or_default();
+  let message = form.message.clone();
+  submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
+}
+
+pub(crate) fn submit_feedback(
+  commands: &mut Commands,
+  form: &mut FeedbackFormState,
+  ig: &mut BevyIndigauge,
+  session_key: &SessionApiKey,
+  message: String,
+) {
   if let Some(start_instant) = SESSION_START_INSTANT.get() {
     let elapsed_ms = Instant::now().duration_since(*start_instant).as_millis();
 
-    let msg = q_input
-      .get_single()
-      .map(|s| s.to_string())
-      .unwrap_or_default()
+    let msg = message
       .replace("\r\n", "\n")
       .replace('\r', "\n")
       .replace("  ", " ")
@@ -124,7 +143,7 @@ pub fn observe_submit_click(
       question: form.question.as_ref(),
     };
 
-    ig.send_feedback(&session_key, &payload, maybe_take_screenshot);
+    ig.send_feedback(session_key, &payload, maybe_take_screenshot);
 
     commands.remove_resource::<FeedbackPanelProps>();
   }
