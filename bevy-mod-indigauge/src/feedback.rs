@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use bevy_text_edit::TextEditPluginNoState;
 
 use crate::{feedback::resources::*, session::resources::SessionApiKey};
@@ -8,16 +8,13 @@ use crate::{feedback::resources::*, session::resources::SessionApiKey};
 pub mod components;
 #[cfg(feature = "feedback_egui")]
 mod egui;
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub mod helpers;
 pub(crate) mod observers;
 pub mod resources;
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 mod systems;
 pub mod types;
-
-//#[cfg(all(feature = "feedback_ui", feature = "feedback_egui"))]
-//compile_error!("Enable either 'feedback_egui' or 'feedback_ui', not both.");
 
 pub struct FeedbackUiPlugin;
 
@@ -28,7 +25,7 @@ impl Plugin for FeedbackUiPlugin {
       .init_resource::<FeedbackKeyCodeToggle>()
       .init_resource::<FeedbackPanelStyles>();
 
-    #[cfg(feature = "feedback_ui")]
+    #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
     app.add_plugins(TextEditPluginNoState).add_systems(
       Update,
       (

@@ -18,7 +18,7 @@ use crate::{
   utils::BevyIndigauge,
 };
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use crate::{
   feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText},
   utils::select,
@@ -44,12 +44,12 @@ where
   }
 }
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_category_dropdown_click(_trigger: Trigger<Pointer<Click>>, mut form: ResMut<FeedbackFormState>) {
   form.dropdown_open = !form.dropdown_open;
 }
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
@@ -69,7 +69,7 @@ pub fn observe_category_item_click(
   }
 }
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_screenshot_toggle_click(
   trigger: Trigger<Pointer<Click>>,
   styles: Res<FeedbackPanelStyles>,
@@ -91,12 +91,12 @@ pub fn observe_screenshot_toggle_click(
   }
 }
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_cancel_click(_trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
-#[cfg(feature = "feedback_ui")]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_submit_click(
   _trigger: Trigger<Pointer<Click>>,
   mut commands: Commands,

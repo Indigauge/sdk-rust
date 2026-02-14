@@ -10,10 +10,10 @@ use serde_json::json;
 use crate::config::*;
 use crate::event::resources::BufferedEvents;
 
-#[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+#[cfg(feature = "feedback")]
 use indigauge_types::prelude::FeedbackPayload;
 
-#[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+#[cfg(feature = "feedback")]
 use bevy::ecs::{bundle::Bundle, system::IntoObserverSystem};
 
 use indigauge_types::prelude::IndigaugeLogLevel;
@@ -62,7 +62,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
       .build()
   }
 
-  #[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+  #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
     match **self.mode {
       IndigaugeMode::Live => {
@@ -106,7 +106,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     }
   }
 
-  #[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+  #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback<RB, RM, OR>(&mut self, api_key: &str, payload: &FeedbackPayload, on_response: OR)
   where
     RB: Bundle,

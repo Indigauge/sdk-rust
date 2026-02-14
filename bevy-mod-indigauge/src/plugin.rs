@@ -101,7 +101,7 @@ where
       }
     }
 
-    #[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+    #[cfg(feature = "feedback")]
     app.add_plugins(crate::feedback::FeedbackUiPlugin);
 
     app

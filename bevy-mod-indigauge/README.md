@@ -29,12 +29,15 @@ bevy-mod-indigauge = { version = "0.2" }
 
 ### Feedback backend features
 
-- `feedback` (default): feedback panel rendered with `bevy_egui`
-- `feedback_ui`: legacy feedback panel rendered with Bevy UI + picking
+- `feedback` (default): feedback panel rendered with Bevy UI + picking
+- `feedback_egui` (optional): render feedback panel with `bevy_egui`
 
 ```toml
-# Disable default features and use legacy Bevy UI panel
-bevy-mod-indigauge = { version = "0.2", default-features = false, features = ["panic_handler", "feedback_ui"] }
+# Keep default Bevy UI panel (no extra feature needed)
+bevy-mod-indigauge = { version = "0.2" }
+
+# Enable optional bevy_egui feedback panel backend
+bevy-mod-indigauge = { version = "0.2", features = ["feedback_egui"] }
 ```
 
 ## Examples

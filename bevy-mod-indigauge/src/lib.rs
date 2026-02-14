@@ -5,7 +5,7 @@ pub(crate) mod utils;
 pub(crate) mod config;
 pub(crate) mod event;
 
-#[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+#[cfg(feature = "feedback")]
 pub(crate) mod feedback;
 
 pub mod plugin;
@@ -22,9 +22,9 @@ pub mod prelude {
   pub use indigauge_core::event::validate_event_type_compile_time;
   pub use indigauge_core::{enqueue_ig_event, ig_debug, ig_error, ig_event, ig_info, ig_trace, ig_warn};
 
-  #[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+  #[cfg(feature = "feedback")]
   pub use crate::feedback::observers::{switch_state_on_feedback_despawn, switch_state_on_feedback_spawn};
-  #[cfg(any(feature = "feedback", feature = "feedback_egui", feature = "feedback_ui"))]
+  #[cfg(feature = "feedback")]
   pub use crate::feedback::{
     resources::{FeedbackKeyCodeToggle, FeedbackPanelProps, FeedbackPanelStyles},
     types::{FeedbackCategory, FeedbackSpawnPosition},
