@@ -75,3 +75,8 @@ required-features = ["default"]
 name = "breakout"
 path = "examples/breakout.rs"
 required-features = ["default"]
+
+[[example]]
+name = "feedback_egui"
+path = "examples/feedback_egui.rs"
+required-features = ["feedback_egui"]

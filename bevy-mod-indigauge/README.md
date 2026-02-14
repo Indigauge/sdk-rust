@@ -41,6 +41,7 @@ bevy-mod-indigauge = { version = "0.2", default-features = false, features = ["p
 
 - [`minimal`](examples/minimal.rs) - An example showing start session, sending info events and triggering feedback form.
 - [`breakout`](examples/breakout.rs) – An example showing a more realistic setup with a real game and game states.
+- [`feedback_egui`](examples/feedback_egui.rs) - A focused example showing the `bevy_egui` feedback panel triggers and props.
 
 ### Running Examples
 
