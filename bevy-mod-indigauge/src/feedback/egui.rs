@@ -122,7 +122,7 @@ pub fn draw_feedback_ui(
                     .selected_text(
                       egui::RichText::new(form.category.label())
                         .size(16.0)
-                        .color(to_egui_color(styles.text_primary)),
+                        .color(to_egui_color(readable_text_color(styles.surface))),
                     )
                     .show_ui(ui, |ui| {
                       for category in crate::feedback::types::FeedbackCategory::ALL.iter() {
@@ -232,8 +232,14 @@ fn styled_button(
     visuals.widgets.active.bg_fill = to_egui_color(hover_background.with_alpha(0.6));
     visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(border.with_alpha(0.25)));
 
+    let rt_text_color = readable_text_color(background);
+    let rt = egui::RichText::new(label)
+      .size(16.0)
+      .color(to_egui_color(rt_text_color));
     ui.add(
-      egui::Button::new(label.into())
+      egui::Button::new(rt)
+        .fill(to_egui_color(background))
+        .stroke(egui::Stroke::new(2.0, to_egui_color(border)))
         .rounding(egui::Rounding::same(10.0))
         .min_size(egui::vec2(120.0, 38.0))
         .sense(egui::Sense::click()),
@@ -245,6 +251,37 @@ fn styled_button(
 fn to_egui_color(color: Color) -> egui::Color32 {
   let [r, g, b, a] = color.to_srgba().to_u8_array();
   egui::Color32::from_rgba_unmultiplied(r, g, b, a)
+}
+
+/// Return a high-contrast foreground color (black or white) for `bg`.
+///
+/// Uses standard relative luminance (sRGB -> linear) to decide whether the
+/// background is light or dark. If `bg` is light, returns `Color::BLACK`,
+/// otherwise returns `Color::WHITE`.
+pub(crate) fn readable_text_color(bg: Color) -> Color {
+  // Convert to sRGBA floats in 0.0..1.0
+  let [r8, g8, b8, _a] = bg.to_srgba().to_u8_array();
+  let rs = r8 as f32 / 255.0;
+  let gs = g8 as f32 / 255.0;
+  let bs = b8 as f32 / 255.0;
+
+  // sRGB -> linear conversion
+  fn srgb_to_linear(c: f32) -> f32 {
+    if c <= 0.04045 {
+      c / 12.92
+    } else {
+      ((c + 0.055) / 1.055).powf(2.4)
+    }
+  }
+
+  let r_lin = srgb_to_linear(rs);
+  let g_lin = srgb_to_linear(gs);
+  let b_lin = srgb_to_linear(bs);
+
+  // Relative luminance (Rec. 709 / ITU-R BT.709)
+  let lum = 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin;
+
+  if lum > 0.5 { Color::BLACK } else { Color::WHITE }
 }
 
 fn val_to_px(value: Val) -> f32 {
