@@ -36,7 +36,7 @@ bevy-mod-indigauge = { version = "0.2" }
 # Keep default Bevy UI panel (no extra feature needed)
 bevy-mod-indigauge = { version = "0.2" }
 
-# Enable optional bevy_egui feedback panel backend
+# Enable optional bevy_egui feedback panel backend (native only)
 bevy-mod-indigauge = { version = "0.2", features = ["feedback_egui"] }
 ```
 
@@ -57,6 +57,9 @@ cargo run --release --example breakout
 
 # Or with tracing feature:
 cargo run --release --example breakout --features tracing
+
+# Run the bevy_egui feedback demo (optional feature)
+cargo run --release --example feedback_egui 
 ```
 
 ## Quick Start
