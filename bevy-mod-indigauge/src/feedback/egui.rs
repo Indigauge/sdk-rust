@@ -74,9 +74,9 @@ pub fn draw_feedback_ui(
     .anchor(area_anchor(&props.spawn_position), panel_offset(&props.spawn_position, margin))
     .show(ctx, |ui| {
       frame.show(ui, |ui| {
-        ui.set_min_width(420.0);
+        // ui.set_min_width(420.0);
         ui.set_max_width(420.0);
-        ui.set_min_height(420.0);
+        // ui.set_min_height(420.0);
 
         if let Some(title) = &props.title {
           ui.colored_label(to_egui_color(styles.text_primary), egui::RichText::new(title).size(22.0));
@@ -111,12 +111,24 @@ pub fn draw_feedback_ui(
               visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(styles.border.with_alpha(0.2)));
               visuals.widgets.active.fg_stroke.color = to_egui_color(styles.text_primary);
 
-              egui::ComboBox::from_label("")
-                .selected_text(form.category.label())
-                .show_ui(ui, |ui| {
-                  for category in crate::feedback::types::FeedbackCategory::ALL.iter() {
-                    ui.selectable_value(&mut form.category, *category, category.label());
-                  }
+              egui::Frame::none()
+                .fill(to_egui_color(styles.surface))
+                .stroke(egui::Stroke::new(2.0, to_egui_color(styles.border)))
+                .rounding(egui::Rounding::same(10.0))
+                .inner_margin(egui::Margin::same(8.0))
+                .show(ui, |ui| {
+                  ui.set_min_width(260.0);
+                  egui::ComboBox::from_label("")
+                    .selected_text(
+                      egui::RichText::new(form.category.label())
+                        .size(16.0)
+                        .color(to_egui_color(styles.text_primary)),
+                    )
+                    .show_ui(ui, |ui| {
+                      for category in crate::feedback::types::FeedbackCategory::ALL.iter() {
+                        ui.selectable_value(&mut form.category, *category, category.label());
+                      }
+                    });
                 });
             });
           });
@@ -214,16 +226,16 @@ fn styled_button(
     visuals.widgets.inactive.fg_stroke.color = to_egui_color(text);
 
     visuals.widgets.hovered.bg_fill = to_egui_color(hover_background);
-    visuals.widgets.hovered.bg_stroke = egui::Stroke::new(2.0, to_egui_color(border.with_alpha(0.5)));
+    visuals.widgets.hovered.bg_stroke = egui::Stroke::new(2.5, to_egui_color(border.with_alpha(0.6)));
     visuals.widgets.hovered.fg_stroke.color = to_egui_color(text);
 
-    visuals.widgets.active.bg_fill = to_egui_color(hover_background.with_alpha(0.5));
-    visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(border.with_alpha(0.2)));
-    visuals.widgets.active.fg_stroke.color = to_egui_color(text);
+    visuals.widgets.active.bg_fill = to_egui_color(hover_background.with_alpha(0.6));
+    visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(border.with_alpha(0.25)));
 
     ui.add(
       egui::Button::new(label.into())
-        .rounding(egui::Rounding::same(8.0))
+        .rounding(egui::Rounding::same(10.0))
+        .min_size(egui::vec2(120.0, 38.0))
         .sense(egui::Sense::click()),
     )
   })

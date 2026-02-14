@@ -45,23 +45,29 @@ where
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-pub fn observe_category_dropdown_click(_trigger: Trigger<Pointer<Click>>, mut form: ResMut<FeedbackFormState>) {
-  form.dropdown_open = !form.dropdown_open;
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+pub fn observe_category_dropdown_click(
+  _trigger: Trigger<Pointer<Click>>,
+  mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
+) {
+  ui_state.dropdown_open = !ui_state.dropdown_open;
 }
 
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
   category_item_query: Query<&CategoryItem>,
   mut q_btn_text_root: Query<&mut TextSpan, With<CategoryButtonText>>,
+  mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
   let Ok(CategoryItem(category)) = category_item_query.get(trigger.entity()) else {
     return;
   };
 
   form.category = *category;
-  form.dropdown_open = false;
+  ui_state.dropdown_open = false;
 
   // Update button text
   if let Ok(mut root) = q_btn_text_root.get_single_mut() {
