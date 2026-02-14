@@ -93,49 +93,35 @@ pub fn draw_feedback_ui(
           ui.colored_label(to_egui_color(color), egui::RichText::new(question).size(size));
           ui.add_space(10.0);
         } else {
-          if styled_button(
-            ui,
-            format!("Category: {}", form.category.label()),
-            styles.surface,
-            styles.border,
-            styles.text_primary,
-            styles.surface.with_alpha(0.5),
-          )
-          .clicked()
-          {
-            form.dropdown_open = !form.dropdown_open;
-          }
+          // Category label + dropdown (ComboBox) styled to match panel surface/border
+          ui.horizontal(|ui| {
+            ui.colored_label(to_egui_color(styles.text_secondary), egui::RichText::new("Category:").size(16.0));
 
-          if form.dropdown_open {
-            ui.add_space(4.0);
-            egui::Grid::new("indigauge_feedback_category_grid")
-              .num_columns(2)
-              .spacing([8.0, 4.0])
-              .show(ui, |ui| {
-                for (index, category) in crate::feedback::types::FeedbackCategory::ALL.iter().enumerate() {
-                  if styled_button(
-                    ui,
-                    category.label(),
-                    styles.surface,
-                    styles.border,
-                    styles.text_primary,
-                    styles.surface.with_alpha(0.5),
-                  )
-                  .clicked()
-                  {
-                    form.category = *category;
-                    form.dropdown_open = false;
-                  }
+            ui.scope(|ui| {
+              let visuals = &mut ui.style_mut().visuals;
+              visuals.widgets.inactive.bg_fill = to_egui_color(styles.surface);
+              visuals.widgets.inactive.bg_stroke = egui::Stroke::new(2.0, to_egui_color(styles.border));
+              visuals.widgets.inactive.fg_stroke.color = to_egui_color(styles.text_primary);
 
-                  if index % 2 == 1 {
-                    ui.end_row();
+              visuals.widgets.hovered.bg_fill = to_egui_color(styles.surface.with_alpha(0.5));
+              visuals.widgets.hovered.bg_stroke = egui::Stroke::new(2.0, to_egui_color(styles.border.with_alpha(0.5)));
+              visuals.widgets.hovered.fg_stroke.color = to_egui_color(styles.text_primary);
+
+              visuals.widgets.active.bg_fill = to_egui_color(styles.surface.with_alpha(0.5));
+              visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(styles.border.with_alpha(0.2)));
+              visuals.widgets.active.fg_stroke.color = to_egui_color(styles.text_primary);
+
+              egui::ComboBox::from_label("")
+                .selected_text(form.category.label())
+                .show_ui(ui, |ui| {
+                  for category in crate::feedback::types::FeedbackCategory::ALL.iter() {
+                    ui.selectable_value(&mut form.category, *category, category.label());
                   }
-                }
-              });
-            ui.add_space(10.0);
-          } else {
-            ui.add_space(10.0);
-          }
+                });
+            });
+          });
+
+          ui.add_space(10.0);
         }
 
         egui::Frame::none()
