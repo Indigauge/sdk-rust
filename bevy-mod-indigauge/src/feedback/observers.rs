@@ -10,12 +10,17 @@ use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
 use indigauge_types::prelude::{FeedbackPayload, IdResponse};
 
 use crate::{
-  feedback::components::{CategoryButtonText, CategoryItem, FeedbackPanel, MessageInput, ScreenshotToggleText},
+  feedback::components::FeedbackPanel,
   feedback::resources::{FeedbackFormState, TakeScreenshot},
   prelude::*,
   session::SESSION_START_INSTANT,
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
+};
+
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+use crate::{
+  feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText},
   utils::select,
 };
 
@@ -39,22 +44,30 @@ where
   }
 }
 
-pub fn observe_category_dropdown_click(_trigger: Trigger<Pointer<Click>>, mut form: ResMut<FeedbackFormState>) {
-  form.dropdown_open = !form.dropdown_open;
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+pub fn observe_category_dropdown_click(
+  _trigger: Trigger<Pointer<Click>>,
+  mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
+) {
+  ui_state.dropdown_open = !ui_state.dropdown_open;
 }
 
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
   category_item_query: Query<&CategoryItem>,
   mut q_btn_text_root: Query<&mut TextSpan, With<CategoryButtonText>>,
+  mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
   let Ok(CategoryItem(category)) = category_item_query.get(trigger.entity()) else {
     return;
   };
 
   form.category = *category;
-  form.dropdown_open = false;
+  ui_state.dropdown_open = false;
 
   // Update button text
   if let Ok(mut root) = q_btn_text_root.get_single_mut() {
@@ -62,6 +75,7 @@ pub fn observe_category_item_click(
   }
 }
 
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_screenshot_toggle_click(
   trigger: Trigger<Pointer<Click>>,
   styles: Res<FeedbackPanelStyles>,
@@ -83,10 +97,12 @@ pub fn observe_screenshot_toggle_click(
   }
 }
 
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_cancel_click(_trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_submit_click(
   _trigger: Trigger<Pointer<Click>>,
   mut commands: Commands,
@@ -95,13 +111,22 @@ pub fn observe_submit_click(
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
 ) {
+  form.message = q_input.get_single().map(|s| s.to_string()).unwrap_or_default();
+  let message = form.message.clone();
+  submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
+}
+
+pub(crate) fn submit_feedback(
+  commands: &mut Commands,
+  form: &mut FeedbackFormState,
+  ig: &mut BevyIndigauge,
+  session_key: &SessionApiKey,
+  message: String,
+) {
   if let Some(start_instant) = SESSION_START_INSTANT.get() {
     let elapsed_ms = Instant::now().duration_since(*start_instant).as_millis();
 
-    let msg = q_input
-      .get_single()
-      .map(|s| s.to_string())
-      .unwrap_or_default()
+    let msg = message
       .replace("\r\n", "\n")
       .replace('\r', "\n")
       .replace("  ", " ")
@@ -124,7 +149,7 @@ pub fn observe_submit_click(
       question: form.question.as_ref(),
     };
 
-    ig.send_feedback(&session_key, &payload, maybe_take_screenshot);
+    ig.send_feedback(session_key, &payload, maybe_take_screenshot);
 
     commands.remove_resource::<FeedbackPanelProps>();
   }

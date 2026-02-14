@@ -179,10 +179,17 @@ impl FeedbackPanelProps {
 pub struct FeedbackFormState {
   // pub rating: u8,                 // 1..=5
   pub category: FeedbackCategory, // dropdown-valg
+  pub message: String,
   pub include_screenshot: bool,
-  pub dropdown_open: bool,
   pub question: Option<String>,
   pub error: Option<String>,
+}
+
+// UI-specific transient state for the legacy Bevy UI backend
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[derive(Resource, Default)]
+pub struct FeedbackUiState {
+  pub dropdown_open: bool,
 }
 
 #[derive(Resource)]

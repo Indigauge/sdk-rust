@@ -95,10 +95,14 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
   );
 }
 
-// Synk dropdown synlighet
-pub fn dropdown_visibility_sync(form: Res<FeedbackFormState>, mut q: Query<&mut Node, With<CategoryList>>) {
+// Synk dropdown synlighet (legacy Bevy UI backend)
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+pub fn dropdown_visibility_sync(
+  ui_state: Res<crate::feedback::resources::FeedbackUiState>,
+  mut q: Query<&mut Node, With<CategoryList>>,
+) {
   if let Ok(mut n) = q.get_single_mut() {
-    n.display = select(Display::Flex, Display::None, form.dropdown_open);
+    n.display = select(Display::Flex, Display::None, ui_state.dropdown_open);
   }
 }
 

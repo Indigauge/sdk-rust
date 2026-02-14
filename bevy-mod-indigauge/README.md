@@ -27,10 +27,24 @@ bevy = "0.15"
 bevy-mod-indigauge = { version = "0.2" }
 ```
 
+### Feedback backend features
+
+- `feedback` (default): feedback panel rendered with Bevy UI + picking
+- `feedback_egui` (optional): render feedback panel with `bevy_egui`
+
+```toml
+# Keep default Bevy UI panel (no extra feature needed)
+bevy-mod-indigauge = { version = "0.2" }
+
+# Enable optional bevy_egui feedback panel backend (native only)
+bevy-mod-indigauge = { version = "0.2", features = ["feedback_egui"] }
+```
+
 ## Examples
 
 - [`minimal`](examples/minimal.rs) - An example showing start session, sending info events and triggering feedback form.
 - [`breakout`](examples/breakout.rs) – An example showing a more realistic setup with a real game and game states.
+- [`feedback_egui`](examples/feedback_egui.rs) - A focused example showing the `bevy_egui` feedback panel triggers and props.
 
 ### Running Examples
 
@@ -43,6 +57,9 @@ cargo run --release --example breakout
 
 # Or with tracing feature:
 cargo run --release --example breakout --features tracing
+
+# Run the bevy_egui feedback demo (optional feature)
+cargo run --release --example feedback_egui --features feedback_egui
 ```
 
 ## Quick Start
