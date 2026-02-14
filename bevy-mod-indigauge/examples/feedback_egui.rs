@@ -20,7 +20,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
-  commands.trigger(StartSessionEvent::new().with_platform("steam"));
+  commands.trigger(StartSessionEvent::new());
 
   commands
     .spawn(Node {
