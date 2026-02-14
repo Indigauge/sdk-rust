@@ -59,7 +59,7 @@ cargo run --release --example breakout
 cargo run --release --example breakout --features tracing
 
 # Run the bevy_egui feedback demo (optional feature)
-cargo run --release --example feedback_egui 
+cargo run --release --example feedback_egui --features feedback_egui
 ```
 
 ## Quick Start
