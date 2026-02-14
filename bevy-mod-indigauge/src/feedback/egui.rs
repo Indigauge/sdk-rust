@@ -74,9 +74,7 @@ pub fn draw_feedback_ui(
     .anchor(area_anchor(&props.spawn_position), panel_offset(&props.spawn_position, margin))
     .show(ctx, |ui| {
       frame.show(ui, |ui| {
-        // ui.set_min_width(420.0);
         ui.set_max_width(420.0);
-        // ui.set_min_height(420.0);
 
         if let Some(title) = &props.title {
           ui.colored_label(to_egui_color(styles.text_primary), egui::RichText::new(title).size(22.0));
