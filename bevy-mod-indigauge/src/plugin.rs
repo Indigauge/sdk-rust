@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-use bevy_mod_reqwest::ReqwestPlugin;
 use crossbeam_channel::{Sender, bounded};
 use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
 use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
@@ -14,8 +13,10 @@ use crate::{
     EventsPlugin,
     resources::{BufferedEvents, EventQueueReceiver},
   },
+  http_runtime::ReqwestPlugin,
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
+use bevy::log::{info, warn};
 
 pub(crate) static GLOBAL_TX: OnceCell<Sender<QueuedEvent>> = OnceCell::new();
 

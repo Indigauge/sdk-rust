@@ -4,6 +4,7 @@ pub(crate) mod utils;
 
 pub(crate) mod config;
 pub(crate) mod event;
+pub(crate) mod http_runtime;
 
 #[cfg(feature = "feedback")]
 pub(crate) mod feedback;

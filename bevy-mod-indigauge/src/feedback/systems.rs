@@ -1,10 +1,3 @@
-use bevy::{
-  input::mouse::{MouseScrollUnit, MouseWheel},
-  picking::hover::HoverMap,
-  prelude::*,
-};
-use bevy_text_edit::TextEditable;
-
 use crate::{
   feedback::observers::{
     observe_cancel_click, observe_category_dropdown_click, observe_category_item_click,
@@ -13,9 +6,14 @@ use crate::{
   feedback::{components::*, helpers::*, resources::*, types::FeedbackCategory},
   utils::select,
 };
+use bevy::{
+  input::mouse::{MouseScrollUnit, MouseWheel},
+  picking::hover::HoverMap,
+  prelude::*,
+};
+use bevy_text_edit::TextEditable;
 
 const LINE_HEIGHT: f32 = 21.;
-
 /// Despawns the active feedback panel UI tree.
 pub fn despawn_feedback_panel(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
@@ -180,6 +178,7 @@ pub fn spawn_feedback_ui(
             border: UiRect::all(Val::Px(2.0)),
             flex_direction: FlexDirection::Column,
             row_gap: Val::Px(10.0),
+            border_radius: BorderRadius::all(Val::Px(8.0)),
             ..default()
           },
           panel(styles.background, styles.border),
@@ -224,6 +223,7 @@ pub fn spawn_feedback_ui(
                       width: Val::Percent(100.0),
                       border: UiRect::all(Val::Px(3.0)),
                       padding: UiRect::axes(Val::Px(10.0), Val::Px(6.0)),
+                      border_radius: BorderRadius::all(Val::Px(8.0)),
                       ..default()
                     },
                     CategoryButton,
@@ -258,11 +258,11 @@ pub fn spawn_feedback_ui(
                   position_type: PositionType::Absolute,
                   top: Val::Px(110.0),
                   left: Val::Px(49.0),
+                  border_radius: BorderRadius::bottom(Val::Px(8.)),
                   ..default()
                 },
                 BackgroundColor(styles.background),
                 BorderColor::all(styles.border),
-                BorderRadius::bottom(Val::Px(8.)),
                 ZIndex(10),
                 CategoryList,
               ))
@@ -275,6 +275,7 @@ pub fn spawn_feedback_ui(
                         border: UiRect::all(Val::Px(1.0)),
                         padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
                         justify_content: JustifyContent::Center,
+                        border_radius: BorderRadius::all(Val::Px(8.0)),
                         ..default()
                       },
                       CategoryItem(*cat),
@@ -299,6 +300,7 @@ pub fn spawn_feedback_ui(
             .spawn((Node {
               width: Val::Percent(100.0),
               min_height: Val::Px(180.0),
+              border_radius: BorderRadius::all(Val::Px(8.0)),
               ..default()
             },))
             .with_children(|area| {
@@ -309,9 +311,10 @@ pub fn spawn_feedback_ui(
                     border: UiRect::all(Val::Px(2.0)),
                     overflow: Overflow::scroll_y(),
                     padding: UiRect::all(Val::Px(10.0)),
+                    border_radius: BorderRadius::all(Val::Px(8.0)),
                     ..default()
                   },
-                  MessageInput,
+                  MessageInputRoot,
                   panel(styles.surface, styles.border),
                 ))
                 .with_children(|field| {
@@ -321,6 +324,7 @@ pub fn spawn_feedback_ui(
                       height: Val::Percent(100.0),
                       ..default()
                     },
+                    Interaction::default(),
                     Text::new(""),
                     TextFont::from_font_size(16.),
                     TextColor(styles.text_primary),
@@ -354,6 +358,7 @@ pub fn spawn_feedback_ui(
                     Node {
                       border: UiRect::all(Val::Px(2.0)),
                       padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
+                      border_radius: BorderRadius::all(Val::Px(8.0)),
                       ..default()
                     },
                     ScreenshotToggle,
@@ -398,6 +403,7 @@ pub fn spawn_feedback_ui(
                   Node {
                     border: UiRect::all(Val::Px(2.0)),
                     padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+                    border_radius: BorderRadius::all(Val::Px(8.0)),
                     ..default()
                   },
                   CancelButton,
@@ -417,6 +423,7 @@ pub fn spawn_feedback_ui(
                   Node {
                     border: UiRect::all(Val::Px(2.0)),
                     padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+                    border_radius: BorderRadius::all(Val::Px(8.0)),
                     ..default()
                   },
                   SubmitButton,
