@@ -18,7 +18,7 @@ panic_handler = ["reqwest"]
 tracing = ["dep:tracing", "dep:tracing-subscriber"]
 
 [dependencies]
-indigauge-types = { path = "../indigauge-types", version = "0.3.0" }
+indigauge-types = { path = "../indigauge-types", version = "0.3" }
 serde_json.workspace = true
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["registry"], optional = true }
