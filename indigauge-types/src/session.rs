@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct StartSessionPayload<'a> {
   pub client_version: &'a str,
+  pub sdk_version: Option<&'a str>,
   pub player_id: Option<&'a String>,
   pub platform: Option<&'a String>,
   pub os: Option<&'a str>,
