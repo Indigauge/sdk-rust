@@ -8,7 +8,7 @@ It’s designed to be easy to integrate and is powerful enough for production us
 
 ## Features
 
-- **Bevy 0.15 compatible** — easy drop-in plugin
+- **Bevy 0.16 compatible** — easy drop-in plugin
 - Lightweight event macros: `ig_info!`, `ig_warn!`, `ig_error!`, …
 - Built-in **Feedback UI panel** for in-game bug reports & suggestions
 - Works on both **native** and **WASM** builds*
@@ -23,8 +23,8 @@ It’s designed to be easy to integrate and is powerful enough for production us
 
 ```toml
 [dependencies]
-bevy = "0.15"
-bevy-mod-indigauge = { version = "0.2" }
+bevy = "0.16"
+bevy-mod-indigauge = { version = "0.4" }
 ```
 
 ### Feedback backend features
@@ -34,10 +34,10 @@ bevy-mod-indigauge = { version = "0.2" }
 
 ```toml
 # Keep default Bevy UI panel (no extra feature needed)
-bevy-mod-indigauge = { version = "0.2" }
+bevy-mod-indigauge = { version = "0.4" }
 
 # Enable optional bevy_egui feedback panel backend (native only)
-bevy-mod-indigauge = { version = "0.2", features = ["feedback_egui"] }
+bevy-mod-indigauge = { version = "0.4", features = ["feedback_egui"] }
 ```
 
 ## Examples
@@ -132,8 +132,8 @@ Send events to the Indigauge API through tracing. This is useful for debugging a
 
 ```toml
 [dependencies]
-bevy = { version = "0.15", features = ["bevy_mod_indigauge"] }
-bevy-mod-indigauge = { version = "0.2", features = ["tracing"] }
+bevy = { version = "0.16", features = ["bevy_mod_indigauge"] }
+bevy-mod-indigauge = { version = "0.4", features = ["tracing"] }
 ```
 
 ```rust,no_run
@@ -185,4 +185,5 @@ fn track_counter(mut counter: Local<u32>) {
 
 | bevy   | bevy-mod-indigauge |
 | ------ | ------------------ |
+| 0.16   | 0.4      |
 | 0.15   | 0.1, 0.2, 0.3      |
