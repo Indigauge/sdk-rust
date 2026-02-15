@@ -43,8 +43,20 @@ impl EventPayload {
     self
   }
 
+  pub fn metadata(&self) -> Option<&serde_json::Value> {
+    self.metadata.as_ref()
+  }
+
+  pub fn level(&self) -> &str {
+    self.level
+  }
+
   pub fn event_type(&self) -> &str {
     &self.event_type
+  }
+
+  pub fn context(&self) -> Option<&EventPayloadCtx> {
+    self.context.as_ref()
   }
 }
 

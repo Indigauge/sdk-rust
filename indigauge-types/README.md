@@ -20,18 +20,12 @@ Creating an event payload manually (usually handled by higher-level crates):
 ```rust
 use indigauge_types::prelude::{EventPayload, EventPayloadCtx};
 
-let payload = EventPayload {
-  level: "info",
-  event_type: "game.start".to_string(),
-  elapsed_ms: 0,
-  metadata: None,
-  idempotency_key: None,
-  context: Some(EventPayloadCtx {
+let payload = EventPayload::new("game.start", "info", None, 1)
+  .with_context(Some(EventPayloadCtx {
     file: "main.rs".to_string(),
     line: 42,
     module: Some("game"),
-  }),
-};
+  }));
 
 println!("payload: {payload:?}");
 ```
