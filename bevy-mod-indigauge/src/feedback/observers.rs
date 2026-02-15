@@ -54,7 +54,6 @@ pub fn observe_category_dropdown_click(
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
