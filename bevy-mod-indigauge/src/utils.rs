@@ -1,6 +1,7 @@
 use bevy::ecs::observer::Trigger;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
-use bevy::log::{error, info};
+use bevy::log::{error, info, warn};
+use bevy::time::Time;
 use bevy_mod_reqwest::reqwest::{Error as ReqwestError, Request};
 use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use indigauge_types::prelude::BatchEventPayload;
@@ -9,6 +10,7 @@ use serde_json::json;
 
 use crate::config::*;
 use crate::event::resources::BufferedEvents;
+use crate::retry::{RetryQueue, RequestKind, calculate_backoff};
 
 #[cfg(feature = "feedback")]
 use indigauge_types::prelude::FeedbackPayload;
@@ -31,6 +33,8 @@ pub struct BevyIndigauge<'w, 's> {
   pub buffered_events: ResMut<'w, BufferedEvents>,
   pub log_level: Res<'w, BevyIndigaugeLogLevel>,
   pub mode: Res<'w, BevyIndigaugeMode>,
+  pub retry_queue: ResMut<'w, RetryQueue>,
+  pub time: Res<'w, Time>,
 }
 
 impl<'w, 's> BevyIndigauge<'w, 's> {

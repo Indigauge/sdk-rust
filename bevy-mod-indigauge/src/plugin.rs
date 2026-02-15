@@ -110,6 +110,7 @@ where
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
       .insert_resource(self.mode.clone())
+      .insert_resource(crate::retry::RetryQueue::default())
       .insert_resource(config);
   }
 }

@@ -10,6 +10,8 @@ pub struct IndigaugeConfig {
   flush_interval: Duration,
   max_queue: usize,
   request_timeout: Duration,
+  max_retries: u32,
+  retry_delay: Duration,
 }
 
 impl IndigaugeConfig {
@@ -23,6 +25,8 @@ impl IndigaugeConfig {
       flush_interval: Duration::from_secs(10),
       max_queue: 10_000,
       request_timeout: Duration::from_secs(10),
+      max_retries: 3,
+      retry_delay: Duration::from_millis(500),
     }
   }
 
@@ -64,6 +68,14 @@ impl IndigaugeConfig {
 
   pub fn request_timeout(&self) -> Duration {
     self.request_timeout
+  }
+
+  pub fn max_retries(&self) -> u32 {
+    self.max_retries
+  }
+
+  pub fn retry_delay(&self) -> Duration {
+    self.retry_delay
   }
 }
 

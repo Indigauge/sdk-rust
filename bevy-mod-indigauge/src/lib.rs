@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 
 pub(crate) mod utils;
+pub(crate) mod retry;
 
 pub(crate) mod config;
 pub(crate) mod event;
