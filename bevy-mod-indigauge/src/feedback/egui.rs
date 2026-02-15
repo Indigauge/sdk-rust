@@ -22,7 +22,7 @@ pub fn spawn_feedback_marker(mut commands: Commands, query: Query<Entity, With<F
 /// Removes marker entities for egui feedback panel.
 pub fn despawn_feedback_marker(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
-    commands.entity(entity).despawn_recursive();
+    commands.entity(entity).despawn();
   }
 }
 
@@ -63,13 +63,15 @@ pub fn draw_feedback_ui(
     }
   }
 
-  let ctx = egui_contexts.ctx_mut();
+  let Ok(ctx) = egui_contexts.ctx_mut() else {
+    return;
+  };
   let panel_id = egui::Id::new("indigauge_feedback_panel");
-  let frame = egui::Frame::none()
+  let frame = egui::Frame::NONE
     .fill(to_egui_color(styles.background))
     .stroke(egui::Stroke::new(2.0, to_egui_color(styles.border)))
-    .rounding(egui::Rounding::same(8.0))
-    .inner_margin(egui::Margin::symmetric(48.0, 32.0));
+    .corner_radius(8)
+    .inner_margin(egui::Margin::symmetric(48, 32));
 
   let margin = panel_margin(&props.position_margin);
 
@@ -113,11 +115,11 @@ pub fn draw_feedback_ui(
               visuals.widgets.active.bg_stroke = egui::Stroke::new(2.0, to_egui_color(styles.border.with_alpha(0.2)));
               visuals.widgets.active.fg_stroke.color = to_egui_color(styles.text_primary);
 
-              egui::Frame::none()
+              egui::Frame::NONE
                 .fill(to_egui_color(styles.surface))
                 .stroke(egui::Stroke::new(2.0, to_egui_color(styles.border)))
-                .rounding(egui::Rounding::same(10.0))
-                .inner_margin(egui::Margin::same(8.0))
+                .corner_radius(10)
+                .inner_margin(egui::Margin::same(8))
                 .show(ui, |ui| {
                   ui.set_min_width(260.0);
                   egui::ComboBox::from_label("")
@@ -138,11 +140,11 @@ pub fn draw_feedback_ui(
           ui.add_space(10.0);
         }
 
-        egui::Frame::none()
+        egui::Frame::NONE
           .fill(to_egui_color(styles.surface))
           .stroke(egui::Stroke::new(2.0, to_egui_color(styles.border)))
-          .rounding(egui::Rounding::same(8.0))
-          .inner_margin(egui::Margin::same(10.0))
+          .corner_radius(8)
+          .inner_margin(egui::Margin::same(10))
           .show(ui, |ui| {
             ui.add(
               egui::TextEdit::multiline(&mut form.message)
@@ -242,7 +244,7 @@ fn styled_button(
       egui::Button::new(rt)
         .fill(to_egui_color(background))
         .stroke(egui::Stroke::new(2.0, to_egui_color(border)))
-        .rounding(egui::Rounding::same(10.0))
+        .corner_radius(10)
         .min_size(egui::vec2(120.0, 38.0))
         .sense(egui::Sense::click()),
     )
@@ -339,6 +341,6 @@ fn panel_offset(spawn_position: &FeedbackSpawnPosition, margin: [f32; 4]) -> egu
 /// Ensures [`EguiPlugin`] is added exactly once.
 pub fn ensure_egui_plugin(app: &mut App) {
   if !app.is_plugin_added::<EguiPlugin>() {
-    app.add_plugins(EguiPlugin);
+    app.add_plugins(EguiPlugin::default());
   }
 }

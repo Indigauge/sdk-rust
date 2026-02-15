@@ -64,7 +64,7 @@ pub fn observe_category_item_click(
   mut q_btn_text_root: Query<&mut TextSpan, With<CategoryButtonText>>,
   mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
-  let Ok(CategoryItem(category)) = category_item_query.get(trigger.entity()) else {
+  let Ok(CategoryItem(category)) = category_item_query.get(trigger.target()) else {
     return;
   };
 
@@ -72,7 +72,7 @@ pub fn observe_category_item_click(
   ui_state.dropdown_open = false;
 
   // Update button text
-  if let Ok(mut root) = q_btn_text_root.get_single_mut() {
+  if let Ok(mut root) = q_btn_text_root.single_mut() {
     **root = category.label().to_string();
   }
 }
@@ -86,7 +86,7 @@ pub fn observe_screenshot_toggle_click(
   mut q: Query<&mut BackgroundColor>,
   mut q_text_root: Query<(&mut TextSpan, &mut TextColor), With<ScreenshotToggleText>>,
 ) {
-  let Ok(mut bg_color) = q.get_mut(trigger.entity()) else {
+  let Ok(mut bg_color) = q.get_mut(trigger.target()) else {
     return;
   };
 
@@ -94,7 +94,7 @@ pub fn observe_screenshot_toggle_click(
 
   bg_color.0 = select(styles.accent, styles.surface, form.include_screenshot);
 
-  if let Ok((mut root, mut color)) = q_text_root.get_single_mut() {
+  if let Ok((mut root, mut color)) = q_text_root.single_mut() {
     **root = select("Yes", "No", form.include_screenshot).to_string();
     color.0 = select(styles.text_primary, styles.text_secondary, form.include_screenshot);
   }
@@ -116,7 +116,7 @@ pub fn observe_submit_click(
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
 ) {
-  form.message = q_input.get_single().map(|s| s.to_string()).unwrap_or_default();
+  form.message = q_input.single().map(|s| s.to_string()).unwrap_or_default();
   let message = form.message.clone();
   submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
 }

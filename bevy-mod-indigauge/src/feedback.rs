@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-use bevy_text_edit::TextEditPluginNoState;
+use bevy_text_edit::TextEditPluginAnyState;
 
 use crate::{feedback::resources::*, session::resources::SessionApiKey};
 
@@ -28,7 +28,7 @@ impl Plugin for FeedbackUiPlugin {
 
     #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
     app
-      .add_plugins(TextEditPluginNoState)
+      .add_plugins(TextEditPluginAnyState::any())
       .insert_resource(FeedbackUiState::default())
       .add_systems(
         Update,
