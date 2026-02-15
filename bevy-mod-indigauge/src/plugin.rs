@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-use bevy_mod_reqwest::ReqwestPlugin;
+use bevy_mod_reqwest::{ReqwestPlugin, ReqwestClient};
 use crossbeam_channel::{Sender, bounded};
 use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
 use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
@@ -104,13 +104,28 @@ where
     #[cfg(feature = "feedback")]
     app.add_plugins(crate::feedback::FeedbackUiPlugin);
 
+    // Configure a custom reqwest client with settings that improve reliability
+    // and enable automatic retries at the TCP level
+    let reqwest_client = reqwest::Client::builder()
+      // Enable connection pooling with keep-alive
+      .pool_idle_timeout(std::time::Duration::from_secs(90))
+      .pool_max_idle_per_host(10)
+      // Set reasonable connection timeout  
+      .connect_timeout(std::time::Duration::from_secs(10))
+      // Enable TCP keep-alive to detect broken connections
+      .tcp_keepalive(Some(std::time::Duration::from_secs(60)))
+      // Enable TCP nodelay for better latency
+      .tcp_nodelay(true)
+      .build()
+      .expect("Failed to build reqwest client");
+
     app
+      .insert_resource(ReqwestClient::from(reqwest_client))
       .add_plugins(ReqwestPlugin::default())
       .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
       .insert_resource(self.mode.clone())
-      .insert_resource(crate::retry::RetryQueue::default())
       .insert_resource(config);
   }
 }
