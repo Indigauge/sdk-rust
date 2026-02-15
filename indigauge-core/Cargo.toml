@@ -1,6 +1,6 @@
 [package]
 name = "indigauge-core"
-version = "0.3.5"
+version = "0.3.6"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Core primitives for the Indigauge Rust SDK: event macros, tracing layer, and helpers"
