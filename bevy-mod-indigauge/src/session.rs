@@ -22,6 +22,7 @@ pub mod utils;
 
 pub(crate) static SESSION_START_INSTANT: OnceCell<Instant> = OnceCell::new();
 
+/// Plugin that manages session lifecycle, metadata updates, and exit handling.
 pub struct SessionPlugin<M: Resource + Serialize> {
   m: PhantomData<M>,
   flush_interval: Duration,
@@ -31,6 +32,7 @@ impl<M> SessionPlugin<M>
 where
   M: Resource + Serialize,
 {
+  /// Creates a new session plugin with the provided flush interval.
   pub fn new(flush_interval: Duration) -> Self {
     Self {
       m: Default::default(),

@@ -1,11 +1,13 @@
 use serde::Serialize;
 use uuid::Uuid;
 
+/// Batch payload for sending multiple events in a single request.
 #[derive(Serialize, Clone, Debug)]
 pub struct BatchEventPayload {
   pub events: Vec<EventPayload>,
 }
 
+/// Structured event payload sent to Indigauge ingest endpoints.
 #[derive(Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EventPayload {
@@ -22,6 +24,7 @@ pub struct EventPayload {
 }
 
 impl EventPayload {
+  /// Creates a new event payload and generates an idempotency key.
   pub fn new(
     event_type: impl Into<String>,
     level: &'static str,
@@ -38,28 +41,34 @@ impl EventPayload {
     }
   }
 
+  /// Attaches optional source context (file/line/module) to the payload.
   pub fn with_context(mut self, ctx: Option<EventPayloadCtx>) -> Self {
     self.context = ctx;
     self
   }
 
+  /// Returns metadata if present.
   pub fn metadata(&self) -> Option<&serde_json::Value> {
     self.metadata.as_ref()
   }
 
+  /// Returns the event severity level.
   pub fn level(&self) -> &str {
     self.level
   }
 
+  /// Returns the event type in `namespace.event` format.
   pub fn event_type(&self) -> &str {
     &self.event_type
   }
 
+  /// Returns context information if present.
   pub fn context(&self) -> Option<&EventPayloadCtx> {
     self.context.as_ref()
   }
 }
 
+/// Source code context for an event.
 #[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct EventPayloadCtx {
   pub file: String,

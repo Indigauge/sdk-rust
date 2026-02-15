@@ -19,6 +19,7 @@ use crate::{
 
 pub(crate) static GLOBAL_TX: OnceCell<Sender<QueuedEvent>> = OnceCell::new();
 
+/// Main Bevy plugin entrypoint for Indigauge telemetry and feedback features.
 pub struct IndigaugePlugin<Meta = EmptySessionMeta> {
   public_key: String,
   /// Defaults to cargo package name
@@ -30,11 +31,13 @@ pub struct IndigaugePlugin<Meta = EmptySessionMeta> {
 }
 
 impl<M> IndigaugePlugin<M> {
+  /// Sets the SDK log level resource.
   pub fn log_level(mut self, log_level: IndigaugeLogLevel) -> Self {
     self.log_level = BevyIndigaugeLogLevel(log_level);
     self
   }
 
+  /// Sets the SDK runtime mode.
   pub fn mode(mut self, mode: IndigaugeMode) -> Self {
     self.mode = BevyIndigaugeMode(mode);
     self
@@ -45,6 +48,7 @@ impl<M> IndigaugePlugin<M>
 where
   M: Resource + Serialize,
 {
+  /// Creates a plugin configured with the provided game identity and key.
   pub fn new(public_key: impl Into<String>, game_name: impl Into<String>, game_version: impl Into<String>) -> Self {
     Self {
       public_key: public_key.into(),

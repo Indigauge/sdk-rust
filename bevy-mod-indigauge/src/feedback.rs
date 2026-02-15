@@ -16,6 +16,7 @@ pub mod resources;
 mod systems;
 pub mod types;
 
+/// Plugin that exposes in-game feedback UI and submission flow.
 pub struct FeedbackUiPlugin;
 
 impl Plugin for FeedbackUiPlugin {

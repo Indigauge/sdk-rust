@@ -9,7 +9,9 @@ use crate::event::validate_event_type;
 
 const EVENT_TYPE_FIELDS: &[&str] = &["ig", "event_type"];
 
+/// Sink abstraction used by the tracing layer to emit events.
 pub trait IndigaugeSink: Send + Sync + 'static {
+  /// Emits a structured tracing event.
   fn log(
     &self,
     level: &'static str,
@@ -21,6 +23,7 @@ pub trait IndigaugeSink: Send + Sync + 'static {
   );
 }
 
+/// Tracing subscriber layer that forwards compatible events to an [`IndigaugeSink`].
 pub struct IndigaugeLayer {
   filters: Vec<String>,
   levels: Vec<IndigaugeLogLevel>,
@@ -29,6 +32,7 @@ pub struct IndigaugeLayer {
 }
 
 impl IndigaugeLayer {
+  /// Creates a layer with default filters and log levels.
   pub fn new_with_sink(sink: Arc<dyn IndigaugeSink>) -> Self {
     Self {
       filters: vec!["indigauge".to_string()],
@@ -42,11 +46,13 @@ impl IndigaugeLayer {
     }
   }
 
+  /// Requires an explicit `ig`/`event_type` field to forward tracing events.
   pub fn with_event_type_required(mut self, event_type_required: bool) -> Self {
     self.event_type_required = event_type_required;
     self
   }
 
+  /// Adds module prefix filters to exclude events from specific modules.
   pub fn with_filters<T>(mut self, filters: Vec<T>) -> Self
   where
     T: Into<String>,
@@ -55,6 +61,7 @@ impl IndigaugeLayer {
     self
   }
 
+  /// Overrides which log levels are forwarded.
   pub fn with_levels(mut self, levels: Vec<IndigaugeLogLevel>) -> Self {
     self.levels = levels;
     self

@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub use indigauge_core::tracing::IndigaugeLayer;
 
 impl BevyIndigaugeLogLevel {
+  /// Returns a lowercase string representation of the configured log level.
   pub fn as_str(&self) -> &'static str {
     match **self {
       IndigaugeLogLevel::Debug => "debug",
@@ -47,6 +48,7 @@ impl IndigaugeSink for EnqueueSink {
   }
 }
 
+/// Builds a default tracing layer that forwards events into the SDK queue.
 pub fn default_bevy_indigauge_layer() -> IndigaugeLayer {
   // Start from core layer and keep existing defaults (filters and levels) while logging via enqueue.
   IndigaugeLayer::new_with_sink(Arc::new(EnqueueSink))

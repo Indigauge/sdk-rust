@@ -24,6 +24,7 @@ use crate::{
   utils::select,
 };
 
+/// Returns an observer that advances a state when feedback panel spawns.
 pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(Trigger<OnAdd, FeedbackPanel>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
@@ -33,6 +34,7 @@ where
   }
 }
 
+/// Returns an observer that advances a state when feedback panel despawns.
 pub fn switch_state_on_feedback_despawn<S>(
   state: S,
 ) -> impl FnMut(Trigger<OnRemove, FeedbackPanel>, ResMut<NextState<S>>)
@@ -46,6 +48,7 @@ where
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Toggles category dropdown open/closed state.
 pub fn observe_category_dropdown_click(
   _trigger: Trigger<Pointer<Click>>,
   mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
@@ -55,6 +58,7 @@ pub fn observe_category_dropdown_click(
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Updates selected category from dropdown item interactions.
 pub fn observe_category_item_click(
   trigger: Trigger<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
@@ -76,6 +80,7 @@ pub fn observe_category_item_click(
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Observer toggling screenshot inclusion for feedback submissions.
 pub fn observe_screenshot_toggle_click(
   trigger: Trigger<Pointer<Click>>,
   styles: Res<FeedbackPanelStyles>,
@@ -98,11 +103,13 @@ pub fn observe_screenshot_toggle_click(
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Observer that closes the feedback panel.
 pub fn observe_cancel_click(_trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Observer that reads form values and submits feedback.
 pub fn observe_submit_click(
   _trigger: Trigger<Pointer<Click>>,
   mut commands: Commands,

@@ -5,6 +5,7 @@ use indigauge_core::event::QueuedEvent;
 use indigauge_types::prelude::{EventPayload, EventPayloadCtx};
 
 #[inline]
+/// Queues a validated event in the global sender if a session is active.
 pub fn enqueue(
   level: &'static str,
   event_type: &str,

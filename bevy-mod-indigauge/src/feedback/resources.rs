@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::feedback::types::{FeedbackCategory, FeedbackSpawnPosition};
 
+/// Key binding resource used to toggle feedback panel visibility.
 #[derive(Resource, Debug)]
 pub struct FeedbackKeyCodeToggle(pub KeyCode);
 
@@ -11,6 +12,7 @@ impl Default for FeedbackKeyCodeToggle {
   }
 }
 
+/// Style palette resource used when rendering the feedback UI.
 #[derive(Resource, Debug)]
 pub struct FeedbackPanelStyles {
   pub primary: Color,
@@ -159,22 +161,26 @@ impl FeedbackPanelProps {
     self
   }
 
+  /// Sets whether screenshot attachments are allowed.
   pub fn allow_screenshot(mut self, allow_screenshot: bool) -> Self {
     self.allow_screenshot = allow_screenshot;
     self
   }
 
+  /// Sets where the feedback panel should appear on screen.
   pub fn spawn_position(mut self, spawn_position: FeedbackSpawnPosition) -> Self {
     self.spawn_position = spawn_position;
     self
   }
 
+  /// Sets outer margin around the feedback panel.
   pub fn margin(mut self, margin: UiRect) -> Self {
     self.position_margin = margin;
     self
   }
 }
 
+/// Mutable state used while the user fills out the feedback form.
 #[derive(Resource, Default)]
 pub struct FeedbackFormState {
   // pub rating: u8,                 // 1..=5
@@ -188,9 +194,11 @@ pub struct FeedbackFormState {
 // UI-specific transient state for the legacy Bevy UI backend
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[derive(Resource, Default)]
+/// UI-only transient state for dropdown behavior.
 pub struct FeedbackUiState {
   pub dropdown_open: bool,
 }
 
+/// Marker resource indicating that next feedback submission should include screenshot capture.
 #[derive(Resource)]
 pub struct TakeScreenshot;

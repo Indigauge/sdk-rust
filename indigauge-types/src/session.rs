@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Payload sent when creating a new analytics session.
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartSessionPayload<'a> {
@@ -14,6 +15,7 @@ pub struct StartSessionPayload<'a> {
   pub gpu: Option<&'a String>,
 }
 
+/// Response returned by the session start endpoint.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct StartSessionResponse {
@@ -21,6 +23,7 @@ pub struct StartSessionResponse {
 }
 
 impl StartSessionResponse {
+  /// Returns a deterministic development-mode session response.
   pub fn dev() -> Self {
     Self {
       session_token: "dev".to_string(),

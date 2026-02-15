@@ -12,18 +12,21 @@ use crate::{
   utils::BevyIndigauge,
 };
 
+/// Spawns a marker entity used to indicate feedback panel presence in egui mode.
 pub fn spawn_feedback_marker(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   if query.is_empty() {
     commands.spawn(FeedbackPanel);
   }
 }
 
+/// Removes marker entities for egui feedback panel.
 pub fn despawn_feedback_marker(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
     commands.entity(entity).despawn_recursive();
   }
 }
 
+/// Toggles feedback panel visibility via configured keybind in egui mode.
 pub fn toggle_panel_visibility_with_key(
   mut commands: Commands,
   keys: Res<ButtonInput<KeyCode>>,
@@ -34,6 +37,7 @@ pub fn toggle_panel_visibility_with_key(
   }
 }
 
+/// Renders and handles the egui feedback panel interactions each frame.
 pub fn draw_feedback_ui(
   mut commands: Commands,
   mut egui_contexts: EguiContexts,
@@ -332,6 +336,7 @@ fn panel_offset(spawn_position: &FeedbackSpawnPosition, margin: [f32; 4]) -> egu
   egui::vec2(x, y)
 }
 
+/// Ensures [`EguiPlugin`] is added exactly once.
 pub fn ensure_egui_plugin(app: &mut App) {
   if !app.is_plugin_added::<EguiPlugin>() {
     app.add_plugins(EguiPlugin);
