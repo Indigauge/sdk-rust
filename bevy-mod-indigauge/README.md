@@ -181,6 +181,25 @@ fn track_counter(mut counter: Local<u32>) {
 }
 ```
 
+## Request Retry Configuration
+
+The SDK is configured with retry-friendly HTTP client settings to improve reliability when sending events and analytics to the Indigauge API:
+
+- **Connection pooling** with 90-second idle timeout for efficient connection reuse
+- **TCP keep-alive** (60 seconds) to detect and recover from broken connections  
+- **TCP nodelay** for reduced latency
+- **Connection timeout** (10 seconds) to fail fast on unreachable servers
+
+### Retry Settings
+
+The SDK includes configuration for retry behavior (`max_retries` and `retry_delay`) which defaults to:
+- Maximum retries: 3 attempts
+- Base retry delay: 500ms (with exponential backoff)
+
+These settings provide the infrastructure for implementing application-level retries in custom error handlers if needed, though most transient network issues are handled automatically by the HTTP client configuration.
+
+For advanced use cases requiring custom retry logic, you can access the retry configuration through `IndigaugeConfig` and use the helper functions in the `retry` module.
+
 ## Bevy Compatibility
 
 | bevy   | bevy-mod-indigauge |
