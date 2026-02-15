@@ -47,7 +47,6 @@ where
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Toggles category dropdown open/closed state.
 pub fn observe_category_dropdown_click(
   _trigger: Trigger<Pointer<Click>>,
@@ -56,7 +55,6 @@ pub fn observe_category_dropdown_click(
   ui_state.dropdown_open = !ui_state.dropdown_open;
 }
 
-#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Updates selected category from dropdown item interactions.
 pub fn observe_category_item_click(
