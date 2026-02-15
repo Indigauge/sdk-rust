@@ -78,7 +78,7 @@ pub fn observe_start_session_event(
 
   let payload = StartSessionPayload {
     client_version: ig.config.game_version(),
-    sdk_version: Some(env!("CARGO_PKG_VERSION")),
+    sdk_version: env!("CARGO_PKG_VERSION"),
     player_id: player_id.as_ref(),
     platform: event.platform.as_ref(),
     os: Some(OS),
