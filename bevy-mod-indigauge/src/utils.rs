@@ -1,4 +1,4 @@
-use bevy::ecs::observer::Trigger;
+use bevy::ecs::observer::On;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
 use bevy_mod_reqwest::reqwest::{Error as ReqwestError, Request};
@@ -83,7 +83,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           self
             .reqwest_client
             .send(request)
-            .on_response(|trigger: Trigger<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if trigger.status().is_success() {
                 if **log_level <= IndigaugeLogLevel::Info {
                   info!(message = "Sent feedback screenshot");
@@ -92,9 +92,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
                 error!(message = "Failed to send feedback screenshot");
               }
             })
-            .on_error(|trigger: Trigger<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send feedback", error = ?trigger.event().0);
+                error!(message = "Failed to send feedback", error = ?trigger.event().error);
               }
             });
         }
@@ -118,9 +118,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
       IndigaugeMode::Live => {
         if let Ok(request) = self.build_post_request("feedback", api_key, payload) {
           self.reqwest_client.send(request).on_response(on_response).on_error(
-            |trigger: Trigger<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            |trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send feedback", error = ?trigger.event().0);
+                error!(message = "Failed to send feedback", error = ?trigger.event().error);
               }
             },
           );
@@ -156,7 +156,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           self
             .reqwest_client
             .send(request)
-            .on_response(|trigger: Trigger<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               let status = trigger.event().status();
               if status.is_success() {
                 if **log_level <= IndigaugeLogLevel::Info {
@@ -166,9 +166,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
                 error!(message = "Failed to send event batch", ?status);
               }
             })
-            .on_error(|trigger: Trigger<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send event batch", error = ?trigger.event().0);
+                error!(message = "Failed to send event batch", error = ?trigger.event().error);
               }
             });
         }
@@ -191,7 +191,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           self
             .reqwest_client
             .send(request)
-            .on_response(|trigger: Trigger<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               let status = trigger.event().status();
               if status.is_success() {
                 if **log_level <= IndigaugeLogLevel::Info {
@@ -201,9 +201,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
                 error!(message = "Failed to update heartbeat", ?status);
               }
             })
-            .on_error(|trigger: Trigger<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send session heartbeat", error = ?trigger.event().0);
+                error!(message = "Failed to send session heartbeat", error = ?trigger.event().error);
               }
             });
         }
@@ -237,7 +237,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           self
             .reqwest_client
             .send(request)
-            .on_response(|trigger: Trigger<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               let status = trigger.event().status();
               if status.is_success() {
                 if **log_level <= IndigaugeLogLevel::Info {
@@ -247,9 +247,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
                 error!(message = "Failed to update metadata", ?status);
               }
             })
-            .on_error(|trigger: Trigger<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
               if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send session metadata update", error = ?trigger.event().0);
+                error!(message = "Failed to send session metadata update", error = ?trigger.event().error);
               }
             });
         }

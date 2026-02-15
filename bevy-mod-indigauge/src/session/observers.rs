@@ -19,7 +19,7 @@ use crate::{
 };
 
 /// Returns an observer that advances a Bevy state when session init completes.
-pub fn switch_state_after_session_init<S>(state: S) -> impl FnMut(Trigger<IndigaugeInitDoneEvent>, ResMut<NextState<S>>)
+pub fn switch_state_after_session_init<S>(state: S) -> impl FnMut(On<IndigaugeInitDoneEvent>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
 {
@@ -30,7 +30,7 @@ where
 
 /// Observer that handles [`StartSessionEvent`] and triggers session startup flow.
 pub fn observe_start_session_event(
-  event: Trigger<StartSessionEvent>,
+  event: On<StartSessionEvent>,
   mut ig: BevyIndigauge,
   mut cmd: Commands,
   sys_info: Res<SystemInfo>,
@@ -108,7 +108,7 @@ pub fn observe_start_session_event(
 
 /// Handles successful HTTP responses from session start requests.
 pub fn on_start_session_response(
-  trigger: Trigger<ReqwestResponseEvent>,
+  trigger: On<ReqwestResponseEvent>,
   mut commands: Commands,
   ig_config: Res<BevyIndigaugeConfig>,
   log_level: Res<BevyIndigaugeLogLevel>,
@@ -137,12 +137,12 @@ pub fn on_start_session_response(
 
 /// Handles transport-level errors from session start requests.
 pub fn on_start_session_error(
-  trigger: Trigger<ReqwestErrorEvent>,
+  trigger: On<ReqwestErrorEvent>,
   mut commands: Commands,
   log_level: Res<BevyIndigaugeLogLevel>,
 ) {
   if **log_level <= IndigaugeLogLevel::Error {
-    error!(message = "Create session post request failed", error = %trigger.event().0);
+    error!(message = "Create session post request failed", error = %trigger.event().error);
   }
   commands.trigger(IndigaugeInitDoneEvent::Failure("Create session post request failed".to_string()));
 }
