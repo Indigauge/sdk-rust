@@ -19,7 +19,7 @@ impl QueuedEvent {
   }
 
   pub fn validate(&self) -> Result<(), String> {
-    let (ns, t) = self.payload.event_type.split_once('.').ok_or("Invalid event type")?;
+    let (ns, t) = self.payload.event_type().split_once('.').ok_or("Invalid event type")?;
     if ns.trim().is_empty() || t.trim().is_empty() {
       return Err("Invalid event type".to_string());
     }

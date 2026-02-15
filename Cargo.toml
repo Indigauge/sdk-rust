@@ -1,7 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
-    "bevy-mod-indigauge", "indigauge-core",
+    "bevy-mod-indigauge", 
+    "indigauge-core",
     "indigauge-types"
 ]
 

@@ -209,14 +209,8 @@ mod tests {
         line,
         module,
       });
-      let payload = EventPayload {
-        level,
-        event_type: event_type.to_string(),
-        elapsed_ms: 1,
-        metadata,
-        idempotency_key: None,
-        context,
-      };
+
+      let payload = EventPayload::new(event_type, level, metadata, 1).with_context(context);
       self.events.lock().unwrap().push(payload);
     }
   }
@@ -265,20 +259,20 @@ mod tests {
       .iter()
       .zip(expected.iter())
       .for_each(|(event, (level, t, message, has_context))| {
-        assert_eq!(event.level, *level);
-        assert_eq!(event.event_type, t.to_string());
+        assert_eq!(event.level(), *level);
+        assert_eq!(event.event_type(), *t);
 
         if !message.is_empty() {
           assert_eq!(
-            event.metadata,
-            Some(json!({
+            event.metadata(),
+            Some(&json!({
               "message": message
             }))
           );
         }
 
         if *has_context {
-          let ctx = event.context.clone().expect("Context");
+          let ctx = event.context().expect("Context");
           assert!(ctx.file.ends_with("tracing.rs"));
           assert!(ctx.module.unwrap_or_default().starts_with("indigauge_core::tracing"));
         }
@@ -323,11 +317,11 @@ mod tests {
     let events = sink.take_events();
     assert_eq!(events.len(), 1);
 
-    assert_eq!(events[0].level, "error");
-    assert_eq!(events[0].event_type, "tracing.error");
+    assert_eq!(events[0].level(), "error");
+    assert_eq!(events[0].event_type(), "tracing.error");
     assert_eq!(
-      events[0].metadata,
-      Some(json!({
+      events[0].metadata(),
+      Some(&json!({
         "message": "Test default error event type"
       }))
     );
@@ -357,11 +351,11 @@ mod tests {
     let events = sink.take_events();
     assert_eq!(events.len(), 1);
 
-    assert_eq!(events[0].level, "info");
-    assert_eq!(events[0].event_type, "custom.event");
+    assert_eq!(events[0].level(), "info");
+    assert_eq!(events[0].event_type(), "custom.event");
     assert_eq!(
-      events[0].metadata,
-      Some(json!({
+      events[0].metadata(),
+      Some(&json!({
         "message": "Test set ig"
       }))
     );
@@ -388,20 +382,15 @@ mod tests {
     let events = sink.take_events();
     assert_eq!(events.len(), 1);
 
+    assert_eq!(events[0].level(), "info");
+    assert_eq!(events[0].event_type(), "tracing.info");
     assert_eq!(
-      events[0],
-      EventPayload {
-        level: "info",
-        event_type: "tracing.info".to_string(),
-        elapsed_ms: 1,
-        metadata: Some(json!({
-          "foo": 42,
-          "bar": "baz",
-          "message": "checking fields"
-        })),
-        idempotency_key: None,
-        context: None,
-      }
+      events[0].metadata(),
+      Some(&json!({
+        "foo": 42,
+        "bar": "baz",
+        "message": "checking fields"
+      }))
     );
   }
 }

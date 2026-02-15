@@ -28,14 +28,7 @@ pub fn enqueue(
       module,
     });
 
-    let payload = EventPayload {
-      level,
-      event_type: event_type.to_string(),
-      elapsed_ms,
-      metadata,
-      idempotency_key: None,
-      context,
-    };
+    let payload = EventPayload::new(event_type, level, metadata, elapsed_ms).with_context(context);
 
     tx.try_send(QueuedEvent::new(payload)).is_ok()
   } else {
