@@ -87,7 +87,7 @@ fn main() {
     .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")))
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
-    .add_event::<CollisionEvent>()
+    .add_message::<CollisionEvent>()
     .add_systems(Startup, setup_camera)
     .add_systems(OnEnter(GameState::InitializeSession), start_default_session)
     .add_systems(OnEnter(GameState::Playing), setup_game)
@@ -124,7 +124,7 @@ struct Velocity(Vec2);
 #[derive(Component)]
 struct Collider;
 
-#[derive(Event, Default)]
+#[derive(Message, Default)]
 struct CollisionEvent;
 
 #[derive(Component)]
@@ -409,7 +409,7 @@ fn check_for_collisions(
   mut score: ResMut<Score>,
   ball_query: Single<(&mut Velocity, &Transform), With<Ball>>,
   collider_query: Query<(Entity, &Transform, Option<&Brick>), With<Collider>>,
-  mut collision_events: EventWriter<CollisionEvent>,
+  mut collision_events: MessageWriter<CollisionEvent>,
 ) {
   let (mut ball_velocity, ball_transform) = ball_query.into_inner();
 
@@ -456,7 +456,7 @@ fn check_for_collisions(
   }
 }
 
-fn play_collision_sound(mut collision_events: EventReader<CollisionEvent>) {
+fn play_collision_sound(mut collision_events: MessageReader<CollisionEvent>) {
   // Play a sound once per frame if a collision occurred.
   if !collision_events.is_empty() {
     // This prevents events staying active on the next frame.

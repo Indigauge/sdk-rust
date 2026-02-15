@@ -8,7 +8,6 @@ use once_cell::sync::OnceCell;
 use serde::Serialize;
 
 use crate::{
-  prelude::StartSessionEvent,
   session::observers::observe_start_session_event,
   session::resources::{SessionApiKey, SessionMeta},
   session::systems::{handle_exit_event, handle_updated_metadata, update_metadata},
@@ -48,7 +47,6 @@ where
   fn build(&self, app: &mut App) {
     app
       .insert_resource(SessionMeta::<M>::default())
-      .add_event::<StartSessionEvent>()
       .add_observer(observe_start_session_event)
       .add_systems(
         Update,

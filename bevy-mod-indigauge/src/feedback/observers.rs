@@ -25,7 +25,7 @@ use crate::{
 };
 
 /// Returns an observer that advances a state when feedback panel spawns.
-pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(Trigger<OnAdd, FeedbackPanel>, ResMut<NextState<S>>)
+pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(On<Add, FeedbackPanel>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
 {
@@ -35,9 +35,7 @@ where
 }
 
 /// Returns an observer that advances a state when feedback panel despawns.
-pub fn switch_state_on_feedback_despawn<S>(
-  state: S,
-) -> impl FnMut(Trigger<OnRemove, FeedbackPanel>, ResMut<NextState<S>>)
+pub fn switch_state_on_feedback_despawn<S>(state: S) -> impl FnMut(On<Remove, FeedbackPanel>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
 {
@@ -49,7 +47,7 @@ where
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Toggles category dropdown open/closed state.
 pub fn observe_category_dropdown_click(
-  _trigger: Trigger<Pointer<Click>>,
+  _trigger: On<Pointer<Click>>,
   mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
   ui_state.dropdown_open = !ui_state.dropdown_open;
@@ -58,13 +56,13 @@ pub fn observe_category_dropdown_click(
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Updates selected category from dropdown item interactions.
 pub fn observe_category_item_click(
-  trigger: Trigger<Pointer<Click>>,
+  trigger: On<Pointer<Click>>,
   mut form: ResMut<FeedbackFormState>,
   category_item_query: Query<&CategoryItem>,
   mut q_btn_text_root: Query<&mut TextSpan, With<CategoryButtonText>>,
   mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
-  let Ok(CategoryItem(category)) = category_item_query.get(trigger.target()) else {
+  let Ok(CategoryItem(category)) = category_item_query.get(trigger.event().entity) else {
     return;
   };
 
@@ -80,13 +78,13 @@ pub fn observe_category_item_click(
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer toggling screenshot inclusion for feedback submissions.
 pub fn observe_screenshot_toggle_click(
-  trigger: Trigger<Pointer<Click>>,
+  trigger: On<Pointer<Click>>,
   styles: Res<FeedbackPanelStyles>,
   mut form: ResMut<FeedbackFormState>,
   mut q: Query<&mut BackgroundColor>,
   mut q_text_root: Query<(&mut TextSpan, &mut TextColor), With<ScreenshotToggleText>>,
 ) {
-  let Ok(mut bg_color) = q.get_mut(trigger.target()) else {
+  let Ok(mut bg_color) = q.get_mut(trigger.event().entity) else {
     return;
   };
 
@@ -102,14 +100,14 @@ pub fn observe_screenshot_toggle_click(
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer that closes the feedback panel.
-pub fn observe_cancel_click(_trigger: Trigger<Pointer<Click>>, mut commands: Commands) {
+pub fn observe_cancel_click(_trigger: On<Pointer<Click>>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer that reads form values and submits feedback.
 pub fn observe_submit_click(
-  _trigger: Trigger<Pointer<Click>>,
+  _trigger: On<Pointer<Click>>,
   mut commands: Commands,
   q_input: Query<&Text, With<MessageInput>>,
   mut form: ResMut<FeedbackFormState>,
@@ -161,7 +159,7 @@ pub(crate) fn submit_feedback(
 }
 
 fn maybe_take_screenshot(
-  trigger: Trigger<ReqwestResponseEvent>,
+  trigger: On<ReqwestResponseEvent>,
   mut commands: Commands,
   take_screenshot: Option<Res<TakeScreenshot>>,
 ) {
@@ -170,7 +168,7 @@ fn maybe_take_screenshot(
   {
     commands.remove_resource::<TakeScreenshot>();
     commands.spawn(Screenshot::primary_window()).observe(
-      move |trigger: Trigger<ScreenshotCaptured>, mut ig: BevyIndigauge, api_key: Res<SessionApiKey>| {
+      move |trigger: On<ScreenshotCaptured>, mut ig: BevyIndigauge, api_key: Res<SessionApiKey>| {
         let img = trigger.event().deref().clone();
 
         match img.try_into_dynamic() {

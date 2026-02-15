@@ -69,19 +69,19 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
           if let Ok(mut ecm) = commands.get_entity(entity) {
             ecm.try_insert_if_new(OriginalButtonStyles {
               background: bg_color.0,
-              border: border_color.0,
+              border: border_color.top,
             });
           }
 
           if !is_active && let Some(hover_style) = bhs {
             bg_color.0 = hover_style.background;
-            border_color.0 = hover_style.border;
+            *border_color = BorderColor::all(hover_style.border);
           }
         },
         Interaction::Pressed => {
           if let Some(pressed_style) = bps {
             bg_color.0 = pressed_style.background;
-            border_color.0 = pressed_style.border;
+            *border_color = BorderColor::all(pressed_style.border);
           }
 
           if hold_after_press && let Ok(mut ecm) = commands.get_entity(entity) {
@@ -91,7 +91,7 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
         _ => {
           if !is_active && let Some(original_styles) = obs {
             bg_color.0 = original_styles.background;
-            border_color.0 = original_styles.border;
+            *border_color = BorderColor::all(original_styles.border);
           }
         },
       }
@@ -113,7 +113,7 @@ pub fn dropdown_visibility_sync(
 
 /// Updates the scroll position of scrollable nodes in response to mouse input
 pub fn update_scroll_position(
-  mut mouse_wheel_events: EventReader<MouseWheel>,
+  mut mouse_wheel_events: MessageReader<MouseWheel>,
   hover_map: Res<HoverMap>,
   mut scrolled_node_query: Query<&mut ScrollPosition>,
 ) {
@@ -126,8 +126,8 @@ pub fn update_scroll_position(
     for (_pointer, pointer_map) in hover_map.iter() {
       for entity in pointer_map.keys().copied() {
         if let Ok(mut scroll_position) = scrolled_node_query.get_mut(entity) {
-          scroll_position.offset_x -= dx;
-          scroll_position.offset_y -= dy;
+          scroll_position.x -= dx;
+          scroll_position.y -= dy;
         }
       }
     }
@@ -261,7 +261,7 @@ pub fn spawn_feedback_ui(
                   ..default()
                 },
                 BackgroundColor(styles.background),
-                BorderColor(styles.border),
+                BorderColor::all(styles.border),
                 BorderRadius::bottom(Val::Px(8.)),
                 ZIndex(10),
                 CategoryList,
