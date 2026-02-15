@@ -37,7 +37,7 @@ impl Plugin for FeedbackUiPlugin {
           systems::despawn_feedback_panel.run_if(resource_removed::<FeedbackPanelProps>),
           systems::toggle_panel_visibility_with_key.run_if(resource_exists::<FeedbackKeyCodeToggle>),
           systems::panel_visibility_sync.run_if(resource_exists_and_changed::<FeedbackPanelProps>),
-          systems::dropdown_visibility_sync.run_if(resource_exists_and_changed::<FeedbackFormState>),
+          systems::dropdown_visibility_sync.run_if(resource_exists_and_changed::<FeedbackUiState>),
           systems::update_scroll_position,
           systems::handle_hover_and_click_styles,
         )
