@@ -14,11 +14,13 @@ pub(crate) mod resources;
 mod systems;
 pub(crate) mod utils;
 
+/// Plugin responsible for consuming queued events and flushing them periodically.
 pub struct EventsPlugin {
   flush_interval: Duration,
 }
 
 impl EventsPlugin {
+  /// Creates an event plugin with a custom flush interval.
   pub fn new(flush_interval: Duration) -> Self {
     Self { flush_interval }
   }

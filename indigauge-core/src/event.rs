@@ -10,14 +10,17 @@ pub struct QueuedEvent {
 }
 
 impl QueuedEvent {
+  /// Creates a new queued event wrapper.
   pub fn new(payload: EventPayload) -> Self {
     Self { payload }
   }
 
+  /// Unwraps and returns the inner event payload.
   pub fn into_inner(self) -> EventPayload {
     self.payload
   }
 
+  /// Validates the event type format.
   pub fn validate(&self) -> Result<(), String> {
     let (ns, t) = self.payload.event_type().split_once('.').ok_or("Invalid event type")?;
     if ns.trim().is_empty() || t.trim().is_empty() {
@@ -44,6 +47,7 @@ pub fn set_event_dispatcher(dispatch: DispatchFn) {
   let _ = DISPATCH.set(dispatch);
 }
 
+/// Dispatches an event through the registered dispatcher if available.
 pub fn dispatch_event(
   level: &'static str,
   event_type: &str,

@@ -9,6 +9,7 @@ use crate::{
   utils::BevyIndigauge,
 };
 
+/// Ends the active session when exit events are observed.
 pub fn handle_exit_event<E>(exit_events: EventReader<E>, ig: BevyIndigauge, session_key: Res<SessionApiKey>)
 where
   E: Event + std::fmt::Debug,

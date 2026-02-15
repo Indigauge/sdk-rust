@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+/// Canonical categories available for user feedback submissions.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Default)]
 pub enum FeedbackCategory {
   #[default]
@@ -18,6 +19,7 @@ pub enum FeedbackCategory {
 }
 
 impl FeedbackCategory {
+  /// All categories in display order.
   pub const ALL: &'static [FeedbackCategory] = &[
     FeedbackCategory::General,
     FeedbackCategory::Ui,
@@ -33,6 +35,7 @@ impl FeedbackCategory {
     FeedbackCategory::Other,
   ];
 
+  /// Human-readable label for this category.
   pub fn label(&self) -> &'static str {
     match self {
       FeedbackCategory::General => "General",
@@ -51,6 +54,7 @@ impl FeedbackCategory {
   }
 }
 
+/// Screen placement options for spawning the feedback panel.
 #[derive(Default)]
 pub enum FeedbackSpawnPosition {
   TopLeft,
@@ -66,6 +70,7 @@ pub enum FeedbackSpawnPosition {
 }
 
 impl FeedbackSpawnPosition {
+  /// Returns the panel vertical alignment for this spawn position.
   pub fn align_items(&self) -> AlignItems {
     match self {
       FeedbackSpawnPosition::TopLeft | FeedbackSpawnPosition::TopCenter | FeedbackSpawnPosition::TopRight => {
@@ -78,6 +83,7 @@ impl FeedbackSpawnPosition {
     }
   }
 
+  /// Returns the panel horizontal alignment for this spawn position.
   pub fn justify_content(&self) -> JustifyContent {
     match self {
       FeedbackSpawnPosition::TopLeft | FeedbackSpawnPosition::BottomLeft | FeedbackSpawnPosition::CenterLeft => {

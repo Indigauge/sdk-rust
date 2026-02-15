@@ -16,12 +16,14 @@ use crate::{
 
 const LINE_HEIGHT: f32 = 21.;
 
+/// Despawns the active feedback panel UI tree.
 pub fn despawn_feedback_panel(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
     commands.entity(entity).despawn_recursive();
   }
 }
 
+/// Opens the feedback panel when the configured toggle key is pressed.
 pub fn toggle_panel_visibility_with_key(
   mut commands: Commands,
   keys: Res<ButtonInput<KeyCode>>,
@@ -33,6 +35,7 @@ pub fn toggle_panel_visibility_with_key(
 }
 
 // Synk display med visible
+/// Synchronizes panel node display with the `visible` flag in props.
 pub fn panel_visibility_sync(props: Res<FeedbackPanelProps>, mut q: Query<&mut Node, With<FeedbackPanel>>) {
   if let Ok(mut node) = q.get_single_mut() {
     node.display = select(Display::Flex, Display::None, props.visible);
@@ -57,6 +60,7 @@ type HoverAndClickInteractionQuery<'a, 'w, 's> = Query<
 >;
 
 // Handle hover and click states
+/// Applies hover/pressed style transitions to feedback UI buttons.
 pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClickInteractionQuery) {
   q.iter_mut().for_each(
     |(interaction, entity, mut bg_color, mut border_color, bhs, bps, obs, hold_after_press, is_active)| {
@@ -97,6 +101,7 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
 
 // Synk dropdown synlighet (legacy Bevy UI backend)
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+/// Synchronizes category dropdown visibility for the legacy Bevy UI backend.
 pub fn dropdown_visibility_sync(
   ui_state: Res<crate::feedback::resources::FeedbackUiState>,
   mut q: Query<&mut Node, With<CategoryList>>,
@@ -129,6 +134,7 @@ pub fn update_scroll_position(
   }
 }
 
+/// Spawns (or respawns) the feedback panel UI hierarchy.
 pub fn spawn_feedback_ui(
   mut commands: Commands,
   styles: Res<FeedbackPanelStyles>,

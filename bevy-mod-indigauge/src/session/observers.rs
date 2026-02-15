@@ -18,6 +18,7 @@ use crate::{
   utils::BevyIndigauge,
 };
 
+/// Returns an observer that advances a Bevy state when session init completes.
 pub fn switch_state_after_session_init<S>(state: S) -> impl FnMut(Trigger<IndigaugeInitDoneEvent>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
@@ -27,6 +28,7 @@ where
   }
 }
 
+/// Observer that handles [`StartSessionEvent`] and triggers session startup flow.
 pub fn observe_start_session_event(
   event: Trigger<StartSessionEvent>,
   mut ig: BevyIndigauge,
@@ -104,6 +106,7 @@ pub fn observe_start_session_event(
   }
 }
 
+/// Handles successful HTTP responses from session start requests.
 pub fn on_start_session_response(
   trigger: Trigger<ReqwestResponseEvent>,
   mut commands: Commands,
@@ -132,6 +135,7 @@ pub fn on_start_session_response(
   }
 }
 
+/// Handles transport-level errors from session start requests.
 pub fn on_start_session_error(
   trigger: Trigger<ReqwestErrorEvent>,
   mut commands: Commands,

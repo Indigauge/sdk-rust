@@ -20,10 +20,12 @@ use indigauge_types::prelude::IndigaugeLogLevel;
 use indigauge_types::prelude::IndigaugeMode;
 
 #[allow(unused)]
+/// Returns `true_case` when `condition` is true, otherwise `false_case`.
 pub fn select<T>(true_case: T, false_case: T, condition: bool) -> T {
   if condition { true_case } else { false_case }
 }
 
+/// System parameter bundling Indigauge resources and request client access.
 #[derive(SystemParam)]
 pub struct BevyIndigauge<'w, 's> {
   pub reqwest_client: BevyReqwest<'w, 's>,

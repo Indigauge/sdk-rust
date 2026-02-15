@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+/// Payload used when submitting in-game feedback.
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct FeedbackPayload<'a> {

@@ -1,5 +1,6 @@
 use std::{env, time::Duration};
 
+/// Runtime configuration used by SDK clients when talking to Indigauge.
 #[derive(Clone)]
 pub struct IndigaugeConfig {
   api_base: String,
@@ -13,6 +14,7 @@ pub struct IndigaugeConfig {
 }
 
 impl IndigaugeConfig {
+  /// Creates a new config with sane defaults and optional env overrides.
   pub fn new(game_name: impl Into<String>, public_key: impl Into<String>, game_version: impl Into<String>) -> Self {
     Self {
       api_base: env::var("INDIGAUGE_API_BASE").unwrap_or_else(|_| "https://ingest.indigauge.com".into()),
@@ -26,42 +28,52 @@ impl IndigaugeConfig {
     }
   }
 
+  /// Returns `true` if a non-empty public key is configured.
   pub fn has_public_key(&self) -> bool {
     !self.public_key.is_empty()
   }
 
+  /// Returns the configured Indigauge public key.
   pub fn public_key(&self) -> &str {
     &self.public_key
   }
 
+  /// Returns the configured game name.
   pub fn game_name(&self) -> &str {
     &self.game_name
   }
 
+  /// Builds a versioned API URL for a relative path.
   pub fn api_url(&self, path: &str) -> String {
     format!("{}/v1/{}", &self.api_base, path)
   }
 
+  /// Returns the ingest API base URL.
   pub fn api_base(&self) -> &str {
     &self.api_base
   }
 
+  /// Returns the game version associated with this client.
   pub fn game_version(&self) -> &str {
     &self.game_version
   }
 
+  /// Returns max number of events per batch request.
   pub fn batch_size(&self) -> usize {
     self.batch_size
   }
 
+  /// Returns max in-memory queued events.
   pub fn max_queue(&self) -> usize {
     self.max_queue
   }
 
+  /// Returns interval between periodic flush operations.
   pub fn flush_interval(&self) -> Duration {
     self.flush_interval
   }
 
+  /// Returns request timeout used for outbound HTTP calls.
   pub fn request_timeout(&self) -> Duration {
     self.request_timeout
   }

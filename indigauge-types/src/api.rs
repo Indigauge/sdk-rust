@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::ops::Deref;
 
+/// Generic API envelope used by Indigauge endpoints.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum ApiResponse<T, E = ErrorBody> {
@@ -8,6 +9,7 @@ pub enum ApiResponse<T, E = ErrorBody> {
   Err(E),
 }
 
+/// Error response body returned for failed API calls.
 #[derive(Debug, Deserialize)]
 pub struct ErrorBody {
   pub code: String,
@@ -15,6 +17,7 @@ pub struct ErrorBody {
 }
 
 #[allow(unused)]
+/// Response containing only a generated identifier.
 #[derive(Debug, Deserialize)]
 pub struct IdResponse {
   pub id: String,
