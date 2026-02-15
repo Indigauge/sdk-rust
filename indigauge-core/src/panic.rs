@@ -27,14 +27,7 @@ pub fn panic_handler(
       module: None,
     });
 
-    let payload = EventPayload {
-      level: "fatal",
-      event_type: "game.crash".to_string(),
-      elapsed_ms,
-      metadata,
-      idempotency_key: None,
-      context,
-    };
+    let payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
 
     let single_event_endpoint = format!("{}/v1/events", host_origin);
     let client = reqwest::blocking::Client::new();

@@ -1,4 +1,5 @@
 use serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Serialize, Clone, Debug)]
 pub struct BatchEventPayload {
@@ -9,16 +10,42 @@ pub struct BatchEventPayload {
 #[serde(rename_all = "camelCase")]
 pub struct EventPayload {
   /// The type of the event. Event type must be in the format 'namespace.type'
-  pub event_type: String,
+  event_type: String,
   /// Metadata associated with the event.
-  pub metadata: Option<serde_json::Value>,
+  metadata: Option<serde_json::Value>,
   /// The level of the event.
-  pub level: &'static str,
+  level: &'static str,
   /// Defaults to elapsed time since session start
-  pub elapsed_ms: u128,
-  /// Defaults to a random string
-  pub idempotency_key: Option<String>,
-  pub context: Option<EventPayloadCtx>,
+  elapsed_ms: u128,
+  idempotency_key: String,
+  context: Option<EventPayloadCtx>,
+}
+
+impl EventPayload {
+  pub fn new(
+    event_type: impl Into<String>,
+    level: &'static str,
+    metadata: Option<serde_json::Value>,
+    elapsed_ms: u128,
+  ) -> Self {
+    Self {
+      event_type: event_type.into(),
+      level,
+      metadata,
+      elapsed_ms,
+      idempotency_key: Uuid::new_v4().to_string(),
+      context: None,
+    }
+  }
+
+  pub fn with_context(mut self, ctx: Option<EventPayloadCtx>) -> Self {
+    self.context = ctx;
+    self
+  }
+
+  pub fn event_type(&self) -> &str {
+    &self.event_type
+  }
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq)]
