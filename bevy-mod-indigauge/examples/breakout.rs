@@ -84,7 +84,7 @@ fn main() {
       ..default()
     }))
     .insert_state(GameState::default())
-    .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")))
+    .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")).mode(IndigaugeMode::Dev))
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_message::<CollisionEvent>()
