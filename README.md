@@ -3,7 +3,7 @@
 ![Crates.io](https://img.shields.io/crates/v/bevy-mod-indigauge?logo=rust&label=crates.io)
 ![Docs.rs](https://img.shields.io/docsrs/bevy-mod-indigauge?logo=docs.rs&label=docs.rs)
 ![License](https://img.shields.io/github/license/Indigauge/sdk-rust)
-![Bevy](https://img.shields.io/badge/Bevy-0.15-8A2BE2)
+![Bevy](https://img.shields.io/badge/Bevy-0.16-8A2BE2)
 
 Instrument your game in minutes with the official Rust SDK for [Indigauge](https://www.indigauge.com).
 
@@ -40,8 +40,8 @@ Add the Bevy plugin crate:
 
 ```toml
 [dependencies]
-bevy = "0.15"
-bevy-mod-indigauge = "0.3"
+bevy = "0.16"
+bevy-mod-indigauge = "0.4"
 ```
 
 Minimal integration:
@@ -154,7 +154,7 @@ cargo run --release -p bevy-mod-indigauge --example feedback_egui --features fee
 
 ## Compatibility
 
-- Bevy: `0.15`
+- Bevy: `0.16`
 - Rust edition: `2024` (crate-level)
 
 ---

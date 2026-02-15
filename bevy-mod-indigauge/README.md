@@ -185,4 +185,5 @@ fn track_counter(mut counter: Local<u32>) {
 
 | bevy   | bevy-mod-indigauge |
 | ------ | ------------------ |
+| 0.16   | 0.4      |
 | 0.15   | 0.1, 0.2, 0.3      |
