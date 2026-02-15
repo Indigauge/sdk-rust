@@ -1,6 +1,6 @@
 use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
-  picking::focus::HoverMap,
+  picking::hover::HoverMap,
   prelude::*,
 };
 use bevy_text_edit::TextEditable;
@@ -19,7 +19,7 @@ const LINE_HEIGHT: f32 = 21.;
 /// Despawns the active feedback panel UI tree.
 pub fn despawn_feedback_panel(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
-    commands.entity(entity).despawn_recursive();
+    commands.entity(entity).despawn();
   }
 }
 
@@ -37,7 +37,7 @@ pub fn toggle_panel_visibility_with_key(
 // Synk display med visible
 /// Synchronizes panel node display with the `visible` flag in props.
 pub fn panel_visibility_sync(props: Res<FeedbackPanelProps>, mut q: Query<&mut Node, With<FeedbackPanel>>) {
-  if let Ok(mut node) = q.get_single_mut() {
+  if let Ok(mut node) = q.single_mut() {
     node.display = select(Display::Flex, Display::None, props.visible);
   }
 }
@@ -66,7 +66,7 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
     |(interaction, entity, mut bg_color, mut border_color, bhs, bps, obs, hold_after_press, is_active)| {
       match *interaction {
         Interaction::Hovered => {
-          if let Some(mut ecm) = commands.get_entity(entity) {
+          if let Ok(mut ecm) = commands.get_entity(entity) {
             ecm.try_insert_if_new(OriginalButtonStyles {
               background: bg_color.0,
               border: border_color.0,
@@ -84,7 +84,7 @@ pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClic
             border_color.0 = pressed_style.border;
           }
 
-          if hold_after_press && let Some(mut ecm) = commands.get_entity(entity) {
+          if hold_after_press && let Ok(mut ecm) = commands.get_entity(entity) {
             ecm.try_insert(Active);
           }
         },
@@ -106,7 +106,7 @@ pub fn dropdown_visibility_sync(
   ui_state: Res<crate::feedback::resources::FeedbackUiState>,
   mut q: Query<&mut Node, With<CategoryList>>,
 ) {
-  if let Ok(mut n) = q.get_single_mut() {
+  if let Ok(mut n) = q.single_mut() {
     n.display = select(Display::Flex, Display::None, ui_state.dropdown_open);
   }
 }
@@ -124,8 +124,8 @@ pub fn update_scroll_position(
     };
 
     for (_pointer, pointer_map) in hover_map.iter() {
-      for (entity, _hit) in pointer_map.iter() {
-        if let Ok(mut scroll_position) = scrolled_node_query.get_mut(*entity) {
+      for entity in pointer_map.keys().copied() {
+        if let Ok(mut scroll_position) = scrolled_node_query.get_mut(entity) {
           scroll_position.offset_x -= dx;
           scroll_position.offset_y -= dy;
         }
@@ -142,8 +142,8 @@ pub fn spawn_feedback_ui(
   mut form: ResMut<FeedbackFormState>,
   feedback_panel_query: Query<Entity, With<FeedbackPanel>>,
 ) {
-  if let Ok(root_entity) = feedback_panel_query.get_single() {
-    commands.entity(root_entity).despawn_recursive();
+  if let Ok(root_entity) = feedback_panel_query.single() {
+    commands.entity(root_entity).despawn();
   }
 
   *form = FeedbackFormState::default();

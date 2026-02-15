@@ -421,7 +421,7 @@ fn check_for_collisions(
 
     if let Some(collision) = collision {
       // Sends a collision event so that other systems can react to the collision
-      collision_events.send_default();
+      collision_events.write_default();
 
       // Bricks should be despawned and increment the scoreboard on collision
       if maybe_brick.is_some() {
@@ -461,7 +461,9 @@ fn play_collision_sound(mut collision_events: EventReader<CollisionEvent>) {
   if !collision_events.is_empty() {
     // This prevents events staying active on the next frame.
     collision_events.clear();
-    info!(message = "Collision occurred", event_type = EventType::HIT_COLLISION);
+    if cfg!(feature = "tracing") {
+      info!(message = "Collision occurred", event_type = EventType::HIT_COLLISION);
+    }
   }
 }
 

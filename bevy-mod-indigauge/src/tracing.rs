@@ -1,6 +1,6 @@
 use crate::config::BevyIndigaugeLogLevel;
 use crate::event::utils::enqueue;
-use bevy::utils::tracing::Level;
+use bevy::log::Level;
 use indigauge_core::tracing::IndigaugeSink;
 use indigauge_types::prelude::IndigaugeLogLevel;
 use std::sync::Arc;
