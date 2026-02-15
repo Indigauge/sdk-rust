@@ -1,14 +1,14 @@
 use bevy::ecs::observer::On;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
-use bevy_mod_reqwest::reqwest::{Error as ReqwestError, Request};
-use bevy_mod_reqwest::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use indigauge_types::prelude::BatchEventPayload;
 use serde::Serialize;
 use serde_json::json;
 
 use crate::config::*;
 use crate::event::resources::BufferedEvents;
+use crate::http_runtime::reqwest::{Error as ReqwestError, Request};
+use crate::http_runtime::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 
 #[cfg(feature = "feedback")]
 use indigauge_types::prelude::FeedbackPayload;

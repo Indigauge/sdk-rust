@@ -7,6 +7,7 @@ use crate::{
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
 };
+use bevy::log::error;
 
 /// Flushes buffered events immediately when batch size threshold is reached.
 pub fn maybe_flush_events(mut ig: BevyIndigauge, session_key: Res<SessionApiKey>) {

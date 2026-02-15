@@ -113,7 +113,9 @@ pub(crate) fn update_metadata<M>(
     if let Some(metadata_resource) = metadata {
       ig.update_metadata(&*metadata_resource, &session_key);
     } else {
+      use bevy::log::warn;
       use std::any::type_name;
+
       let tn = type_name::<M>();
       if tn.ne(type_name::<EmptySessionMeta>()) && **ig.log_level <= IndigaugeLogLevel::Warn {
         warn!(message = "Metadata changed, but did not exist as a resource", type = tn);

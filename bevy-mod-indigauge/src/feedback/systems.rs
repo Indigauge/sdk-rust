@@ -1,9 +1,3 @@
-use bevy::{
-  input::mouse::{MouseScrollUnit, MouseWheel},
-  picking::hover::HoverMap,
-  prelude::*,
-};
-use bevy_text_edit::TextEditable;
 use crate::{
   feedback::observers::{
     observe_cancel_click, observe_category_dropdown_click, observe_category_item_click,
@@ -12,6 +6,12 @@ use crate::{
   feedback::{components::*, helpers::*, resources::*, types::FeedbackCategory},
   utils::select,
 };
+use bevy::{
+  input::mouse::{MouseScrollUnit, MouseWheel},
+  picking::hover::HoverMap,
+  prelude::*,
+};
+use bevy_text_edit::TextEditable;
 
 const LINE_HEIGHT: f32 = 21.;
 /// Despawns the active feedback panel UI tree.

@@ -1,8 +1,8 @@
 use std::{env::consts::OS, time::Instant};
 
 use bevy::{diagnostic::SystemInfo, prelude::*, render::renderer::RenderAdapterInfo, state::state::FreelyMutableState};
-use bevy_mod_reqwest::{ReqwestErrorEvent, ReqwestResponseEvent};
 
+use bevy::log::{error, info, warn};
 use indigauge_types::prelude::{
   ApiResponse, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload, StartSessionResponse,
 };
@@ -10,6 +10,7 @@ use indigauge_types::prelude::{
 use crate::{
   config::BevyIndigaugeConfig,
   config::BevyIndigaugeMode,
+  http_runtime::{ReqwestErrorEvent, ReqwestResponseEvent},
   plugin::GLOBAL_TX,
   prelude::*,
   session::SESSION_START_INSTANT,
