@@ -20,36 +20,12 @@ use {bevy::tasks::Task, futures_lite::future};
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
 pub struct HttpRequestSet;
 
-pub struct ReqwestPlugin {
-  pub automatically_name_requests: bool,
-}
-
-impl Default for ReqwestPlugin {
-  fn default() -> Self {
-    Self {
-      automatically_name_requests: true,
-    }
-  }
-}
+#[derive(Default)]
+pub struct ReqwestPlugin;
 
 impl Plugin for ReqwestPlugin {
   fn build(&self, app: &mut App) {
     app.init_resource::<ReqwestClient>();
-
-    if self.automatically_name_requests {
-      app
-        .world_mut()
-        .register_component_hooks::<ReqwestInflight>()
-        .on_insert(|mut world, ctx| {
-          let request_url = world.get::<ReqwestInflight>(ctx.entity).unwrap().url.clone();
-
-          if world.get::<Name>(ctx.entity).is_none() {
-            let mut commands = world.commands();
-            let mut entity = commands.get_entity(ctx.entity).unwrap();
-            entity.insert(Name::new(format!("http: {request_url}")));
-          }
-        });
-    }
 
     app.add_systems(
       PreUpdate,
@@ -172,7 +148,6 @@ impl<'w, 's> BevyReqwest<'w, 's> {
   fn create_inflight_task(&self, request: reqwest::Request) -> ReqwestInflight {
     let pool = IoTaskPool::get();
     let client = self.client.0.clone();
-    let url = request.url().to_string();
 
     #[cfg(target_family = "wasm")]
     let task = {
@@ -189,7 +164,7 @@ impl<'w, 's> BevyReqwest<'w, 's> {
     #[cfg(not(target_family = "wasm"))]
     let task = { pool.spawn(async move { async_compat::Compat::new(perform_request(client, request)).await }) };
 
-    ReqwestInflight::new(task, url)
+    ReqwestInflight::new(task)
   }
 }
 
@@ -232,7 +207,6 @@ type InflightResult = (reqwest::Result<bytes::Bytes>, Option<ResponseParts>);
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct ReqwestInflight {
-  pub(crate) url: String,
   #[cfg(not(target_family = "wasm"))]
   result: Task<InflightResult>,
   #[cfg(target_family = "wasm")]
@@ -253,13 +227,13 @@ impl ReqwestInflight {
   }
 
   #[cfg(target_family = "wasm")]
-  fn new(result: Receiver<InflightResult>, url: String) -> Self {
-    Self { url, result }
+  fn new(result: Receiver<InflightResult>) -> Self {
+    Self { result }
   }
 
   #[cfg(not(target_family = "wasm"))]
-  fn new(result: Task<InflightResult>, url: String) -> Self {
-    Self { url, result }
+  fn new(result: Task<InflightResult>) -> Self {
+    Self { result }
   }
 }
 
