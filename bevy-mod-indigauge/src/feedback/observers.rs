@@ -5,7 +5,6 @@ use crate::{
   feedback::resources::{FeedbackFormState, TakeScreenshot},
   http_runtime::ReqwestResponseEvent,
   prelude::*,
-  session::SESSION_START_INSTANT,
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
 };
@@ -125,7 +124,7 @@ pub(crate) fn submit_feedback(
   session_key: &SessionApiKey,
   message: String,
 ) {
-  if let Some(start_instant) = SESSION_START_INSTANT.get() {
+  if let Some(start_instant) = indigauge_core::state::get_session_start_instant() {
     let elapsed_ms = Instant::now().duration_since(*start_instant).as_millis();
 
     let msg = message

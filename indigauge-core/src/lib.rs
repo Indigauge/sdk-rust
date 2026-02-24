@@ -3,6 +3,7 @@
 pub mod event;
 pub mod hardware;
 pub mod http;
+pub mod state;
 pub mod types {
   pub use indigauge_types::prelude::*;
 }

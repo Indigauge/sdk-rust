@@ -1,10 +1,8 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-use crossbeam_channel::{Sender, bounded};
-use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
+use indigauge_core::state::init;
 use indigauge_core::types::{IndigaugeLogLevel, IndigaugeMode};
-use once_cell::sync::OnceCell;
 use serde::Serialize;
 
 use crate::{
@@ -17,8 +15,6 @@ use crate::{
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
 use bevy::log::{info, warn};
-
-pub(crate) static GLOBAL_TX: OnceCell<Sender<QueuedEvent>> = OnceCell::new();
 
 /// Main Bevy plugin entrypoint for Indigauge telemetry and feedback features.
 pub struct IndigaugePlugin<Meta = EmptySessionMeta> {
@@ -90,18 +86,12 @@ where
             "Indigauge public key is not set for live-mode. Please set the INDIGAUGE_PUBLIC_KEY environment variable to start sessions and send events."
           );
         }
-      } else if GLOBAL_TX.get().is_none() {
+      } else if let Some(rx) = init(config.max_queue()) {
         if !config.has_public_key() && *self.log_level <= IndigaugeLogLevel::Info {
           info!(
             "Indigauge public key is not set for dev-mode. Logs will still be shown in the console, but not sent to the server."
           );
         }
-        let (tx, rx) = bounded::<QueuedEvent>(config.max_queue());
-        GLOBAL_TX.set(tx).ok();
-
-        // Register the event dispatcher used by core macros.
-        set_event_dispatcher(crate::event::utils::enqueue);
-
         app.insert_resource(EventQueueReceiver::new(rx));
       }
     }

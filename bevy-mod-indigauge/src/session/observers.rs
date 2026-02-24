@@ -12,13 +12,12 @@ use crate::{
   config::BevyIndigaugeConfig,
   config::BevyIndigaugeMode,
   http_runtime::{ReqwestErrorEvent, ReqwestResponseEvent},
-  plugin::GLOBAL_TX,
   prelude::*,
-  session::SESSION_START_INSTANT,
   session::resources::SessionApiKey,
   session::utils::{bucket_cores, bucket_ram_gb, coarsen_cpu_name},
   utils::BevyIndigauge,
 };
+use indigauge_core::state::{get_global_tx, get_session_start_instant, set_session_start_instant};
 
 /// Returns an observer that advances a Bevy state when session init completes.
 pub fn switch_state_after_session_init<S>(state: S) -> impl FnMut(On<IndigaugeInitDoneEvent>, ResMut<NextState<S>>)
@@ -38,7 +37,7 @@ pub fn observe_start_session_event(
   sys_info: Res<SystemInfo>,
   render_info: Res<RenderAdapterInfo>,
 ) {
-  if SESSION_START_INSTANT.get().is_some() {
+  if get_session_start_instant().is_some() {
     if **ig.log_level <= IndigaugeLogLevel::Warn {
       warn!("Session already started");
     }
@@ -46,7 +45,7 @@ pub fn observe_start_session_event(
     return;
   }
 
-  if GLOBAL_TX.get().is_none() {
+  if get_global_tx().is_none() {
     cmd.trigger(IndigaugeInitDoneEvent::UnexpectedFailure("Global transaction not initialized".to_string()));
     return;
   }
@@ -156,7 +155,7 @@ fn start_session(
   config: &IndigaugeConfig,
 ) {
   let start_instant = Instant::now();
-  if let Err(set_start_instance_err) = SESSION_START_INSTANT.set(start_instant) {
+  if let Err(set_start_instance_err) = set_session_start_instant(start_instant) {
     if **log_level <= IndigaugeLogLevel::Error {
       error!(message = "Failed to set session start instant", error = ?set_start_instance_err);
     }
