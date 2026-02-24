@@ -11,19 +11,19 @@ use bevy::log::error;
 
 /// Flushes buffered events immediately when batch size threshold is reached.
 pub fn maybe_flush_events(mut ig: BevyIndigauge, session_key: Option<Res<SessionApiKey>>) {
-  if let Some(key) = session_key {
-    if ig.buffered_events.events.len() >= ig.config.batch_size() {
-      ig.flush_events(&key);
-    }
+  if let Some(key) = session_key
+    && ig.buffered_events.events.len() >= ig.config.batch_size()
+  {
+    ig.flush_events(&key);
   }
 }
 
 /// Periodic flush system that falls back to heartbeat when no events are pending.
 pub fn flush_events(mut ig: BevyIndigauge, session_key: Option<Res<SessionApiKey>>) {
-  if let Some(key) = session_key {
-    if ig.flush_events(&key) == 0 {
-      ig.send_heartbeat(&key);
-    }
+  if let Some(key) = session_key
+    && ig.flush_events(&key) == 0
+  {
+    ig.send_heartbeat(&key);
   }
 }
 

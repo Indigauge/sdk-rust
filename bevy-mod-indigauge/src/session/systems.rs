@@ -13,10 +13,10 @@ pub fn handle_exit_event<E>(exit_events: MessageReader<E>, ig: BevyIndigauge, se
 where
   E: Message + std::fmt::Debug,
 {
-  if !exit_events.is_empty() {
-    if let Some(key) = session_key {
-      end_session(ig, key);
-    }
+  if !exit_events.is_empty()
+    && let Some(key) = session_key
+  {
+    end_session(ig, key);
   }
 }
 

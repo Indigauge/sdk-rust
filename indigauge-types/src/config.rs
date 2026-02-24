@@ -98,3 +98,16 @@ pub enum IndigaugeMode {
   /// Disabled mode does not send any data to the Indigauge API.
   Disabled,
 }
+
+impl IndigaugeMode {
+  /// Auto-selects the mode based on compile-time configuration.
+  ///
+  /// Returns `Dev` mode in debug builds and `Live` mode in release builds.
+  pub fn auto() -> Self {
+    if cfg!(debug_assertions) {
+      IndigaugeMode::Dev
+    } else {
+      IndigaugeMode::Live
+    }
+  }
+}
