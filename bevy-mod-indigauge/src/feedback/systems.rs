@@ -11,7 +11,7 @@ use bevy::{
   prelude::*,
 };
 use bevy_text_edit::TextEditable;
-use indigauge_core::http::select;
+use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
 /// Despawns the active feedback panel UI tree.

@@ -20,7 +20,7 @@ use indigauge_core::types::{FeedbackPayload, IdResponse};
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use crate::feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText};
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-use indigauge_core::http::select;
+use indigauge_core::utils::select;
 
 /// Returns an observer that advances a state when feedback panel spawns.
 pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(On<Add, FeedbackPanel>, ResMut<NextState<S>>)
