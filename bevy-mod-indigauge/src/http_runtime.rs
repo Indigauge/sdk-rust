@@ -7,6 +7,7 @@ use bevy::{
 };
 
 use bevy::log::{debug, error, info};
+use indigauge_core::http::{SdkResponse, decode_json_body, decode_utf8_body, send_request};
 pub use reqwest;
 pub use reqwest::StatusCode;
 pub use reqwest::header::HeaderMap;
@@ -52,14 +53,13 @@ impl ReqwestPlugin {
     for (entity, mut inflight) in requests.iter_mut() {
       debug!("polling request: {entity:?}");
 
-      let Some((result, parts)) = inflight.poll() else {
+      let Some(result) = inflight.poll() else {
         continue;
       };
 
       match result {
-        Ok(body) => {
-          let response = parts.expect("response parts should exist when request succeeds");
-          commands.trigger(ReqwestResponseEvent::new(entity, body, response.status, response.headers));
+        Ok(response) => {
+          commands.trigger(ReqwestResponseEvent::new(entity, response.body, response.status, response.headers));
         },
         Err(error) => {
           commands.trigger(ReqwestErrorEvent { entity, error });
@@ -202,7 +202,7 @@ impl DerefMut for ReqwestClient {
   }
 }
 
-type InflightResult = (reqwest::Result<bytes::Bytes>, Option<ResponseParts>);
+type InflightResult = Result<SdkResponse, reqwest::Error>;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
@@ -237,12 +237,6 @@ impl ReqwestInflight {
   }
 }
 
-#[derive(Component, Debug)]
-struct ResponseParts {
-  status: StatusCode,
-  headers: HeaderMap,
-}
-
 #[derive(Clone, EntityEvent, Debug)]
 pub struct ReqwestResponseEvent {
   entity: Entity,
@@ -264,15 +258,15 @@ impl ReqwestResponseEvent {
   }
 
   pub fn as_str(&self) -> anyhow::Result<&str> {
-    Ok(std::str::from_utf8(&self.bytes)?)
+    Ok(decode_utf8_body(&self.bytes)?)
   }
 
   pub fn as_string(&self) -> anyhow::Result<String> {
     Ok(self.as_str()?.to_string())
   }
 
-  pub fn deserialize_json<'de, T: serde::Deserialize<'de>>(&'de self) -> anyhow::Result<T> {
-    Ok(serde_json::from_str(self.as_str()?)?)
+  pub fn deserialize_json<T: serde::de::DeserializeOwned>(&self) -> anyhow::Result<T> {
+    Ok(decode_json_body(&self.bytes)?)
   }
 
   #[inline]
@@ -302,14 +296,5 @@ pub struct JsonResponse<T> {
 }
 
 async fn perform_request(client: reqwest::Client, request: reqwest::Request) -> InflightResult {
-  match client.execute(request).await {
-    Ok(response) => {
-      let parts = ResponseParts {
-        status: response.status(),
-        headers: response.headers().clone(),
-      };
-      (response.bytes().await, Some(parts))
-    },
-    Err(error) => (Err(error), None),
-  }
+  send_request(&client, request).await
 }

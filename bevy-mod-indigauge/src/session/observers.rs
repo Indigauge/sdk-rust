@@ -3,6 +3,7 @@ use std::{env::consts::OS, time::Instant};
 use bevy::{diagnostic::SystemInfo, prelude::*, render::renderer::RenderAdapterInfo, state::state::FreelyMutableState};
 
 use bevy::log::{error, info, warn};
+use indigauge_core::http::decode_api_response;
 use indigauge_types::prelude::{
   ApiResponse, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload, StartSessionResponse,
 };
@@ -91,9 +92,7 @@ pub fn observe_start_session_event(
     gpu: Some(&render_info.name),
   };
 
-  let reqwest_client = ig.build_post_request("sessions/start", ig.config.public_key(), &payload);
-
-  match reqwest_client {
+  match ig.sdk_client().start_session(&payload) {
     Ok(reqwest_client) => {
       ig.reqwest_client
         .send(reqwest_client)
@@ -115,7 +114,7 @@ pub fn on_start_session_response(
   log_level: Res<BevyIndigaugeLogLevel>,
   mode: Res<BevyIndigaugeMode>,
 ) {
-  let Ok(response) = trigger.event().deserialize_json::<ApiResponse<StartSessionResponse>>() else {
+  let Ok(response) = decode_api_response::<StartSessionResponse>(trigger.event().body()) else {
     if **log_level <= IndigaugeLogLevel::Error {
       error!("Failed to deserialize response");
     }

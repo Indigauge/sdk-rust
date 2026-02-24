@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use indigauge_types::prelude::IndigaugeLogLevel;
 use serde::Serialize;
-use serde_json::json;
 
 use crate::{
   prelude::{EmptySessionMeta, StartSessionEvent},
@@ -85,10 +84,16 @@ pub fn start_default_session(mut commands: Commands) {
 pub fn end_session(mut ig: BevyIndigauge, session_key: Res<SessionApiKey>) {
   ig.flush_events(&session_key);
 
-  let reqwest_client = ig.build_post_request("sessions/end", &session_key, &json!({"reason": "ended"}));
-
-  if let Ok(reqwest_client) = reqwest_client {
-    ig.reqwest_client.send(reqwest_client);
+  match ig.sdk_client().end_session(&session_key, "ended") {
+    Ok(request) => {
+      ig.reqwest_client.send(request);
+    },
+    Err(error) => {
+      if **ig.log_level <= IndigaugeLogLevel::Error {
+        use bevy::log::error;
+        error!(message = "Failed to build end session request", ?error);
+      }
+    },
   }
 }
 

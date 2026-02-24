@@ -1,13 +1,12 @@
 use bevy::ecs::observer::On;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
+use indigauge_core::http::{ResponseDisposition, SdkHttpClient, classify_status};
 use indigauge_types::prelude::BatchEventPayload;
 use serde::Serialize;
-use serde_json::json;
 
 use crate::config::*;
 use crate::event::resources::BufferedEvents;
-use crate::http_runtime::reqwest::{Error as ReqwestError, Request};
 use crate::http_runtime::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 
 #[cfg(feature = "feedback")]
@@ -18,6 +17,32 @@ use bevy::ecs::{bundle::Bundle, system::IntoObserverSystem};
 
 use indigauge_types::prelude::IndigaugeLogLevel;
 use indigauge_types::prelude::IndigaugeMode;
+
+fn log_response_outcome(
+  log_level: &BevyIndigaugeLogLevel,
+  status: reqwest::StatusCode,
+  success_msg: &str,
+  error_msg: &str,
+) {
+  match classify_status(status) {
+    ResponseDisposition::Success => {
+      if **log_level <= IndigaugeLogLevel::Info {
+        info!(message = success_msg);
+      }
+    },
+    ResponseDisposition::Failure => {
+      if **log_level <= IndigaugeLogLevel::Error {
+        error!(message = error_msg, ?status);
+      }
+    },
+  }
+}
+
+fn log_transport_error(log_level: &BevyIndigaugeLogLevel, error_msg: &str, error: &reqwest::Error) {
+  if **log_level <= IndigaugeLogLevel::Error {
+    error!(message = error_msg, error = ?error);
+  }
+}
 
 #[allow(unused)]
 /// Returns `true_case` when `condition` is true, otherwise `false_case`.
@@ -36,68 +61,35 @@ pub struct BevyIndigauge<'w, 's> {
 }
 
 impl<'w, 's> BevyIndigauge<'w, 's> {
-  pub(crate) fn build_post_request<S>(&self, url: &str, ig_key: &str, payload: &S) -> Result<Request, ReqwestError>
-  where
-    S: Serialize,
-  {
-    self
-      .reqwest_client
-      .post(self.config.api_url(url))
-      .timeout(self.config.request_timeout())
-      .header("Content-Type", "application/json")
-      .header("X-Indigauge-Key", ig_key)
-      .json(payload)
-      .build()
-  }
-
-  pub(crate) fn build_patch_request<S>(&self, url: &str, ig_key: &str, payload: &S) -> Result<Request, ReqwestError>
-  where
-    S: Serialize,
-  {
-    self
-      .reqwest_client
-      .patch(self.config.api_url(url))
-      .timeout(self.config.request_timeout())
-      .header("Content-Type", "application/json")
-      .header("X-Indigauge-Key", ig_key)
-      .json(payload)
-      .build()
+  pub(crate) fn sdk_client(&self) -> SdkHttpClient<'_> {
+    SdkHttpClient::new(&self.reqwest_client, &self.config)
   }
 
   #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
     match **self.mode {
-      IndigaugeMode::Live => {
-        let screenshot_path = format!("feedback/{}/screenshot", feedback_id);
-
-        let request = self
-          .reqwest_client
-          .post(self.config.api_url(&screenshot_path))
-          .timeout(self.config.request_timeout())
-          .header("Content-Type", "image/png")
-          .header("X-Indigauge-Key", api_key)
-          .body(image_data)
-          .build();
-
-        if let Ok(request) = request {
+      IndigaugeMode::Live => match self.sdk_client().feedback_screenshot(api_key, feedback_id, image_data) {
+        Ok(request) => {
           self
             .reqwest_client
             .send(request)
             .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if trigger.status().is_success() {
-                if **log_level <= IndigaugeLogLevel::Info {
-                  info!(message = "Sent feedback screenshot");
-                }
-              } else if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send feedback screenshot");
-              }
+              log_response_outcome(
+                &log_level,
+                trigger.status(),
+                "Sent feedback screenshot",
+                "Failed to send feedback screenshot",
+              );
             })
             .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send feedback", error = ?trigger.event().error);
-              }
+              log_transport_error(&log_level, "Failed to send feedback", &trigger.event().error);
             });
-        }
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build feedback screenshot request", ?error);
+          }
+        },
       },
       IndigaugeMode::Dev => {
         if **self.log_level <= IndigaugeLogLevel::Info {
@@ -115,16 +107,19 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>,
   {
     match **self.mode {
-      IndigaugeMode::Live => {
-        if let Ok(request) = self.build_post_request("feedback", api_key, payload) {
+      IndigaugeMode::Live => match self.sdk_client().feedback(api_key, payload) {
+        Ok(request) => {
           self.reqwest_client.send(request).on_response(on_response).on_error(
             |trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send feedback", error = ?trigger.event().error);
-              }
+              log_transport_error(&log_level, "Failed to send feedback", &trigger.event().error);
             },
           );
-        }
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build feedback request", ?error);
+          }
+        },
       },
       IndigaugeMode::Dev => {
         if **self.log_level <= IndigaugeLogLevel::Info {
@@ -151,27 +146,28 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     };
 
     match **self.mode {
-      IndigaugeMode::Live => {
-        if let Ok(request) = self.build_post_request("events/batch", api_key, &events) {
+      IndigaugeMode::Live => match self.sdk_client().event_batch(api_key, &events) {
+        Ok(request) => {
           self
             .reqwest_client
             .send(request)
             .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              let status = trigger.event().status();
-              if status.is_success() {
-                if **log_level <= IndigaugeLogLevel::Info {
-                  info!(message = "Event batch sent successfully");
-                }
-              } else if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send event batch", ?status);
-              }
+              log_response_outcome(
+                &log_level,
+                trigger.event().status(),
+                "Event batch sent successfully",
+                "Failed to send event batch",
+              );
             })
             .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send event batch", error = ?trigger.event().error);
-              }
+              log_transport_error(&log_level, "Failed to send event batch", &trigger.event().error);
             });
-        }
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build event batch request", ?error);
+          }
+        },
       },
       IndigaugeMode::Dev => {
         if **self.log_level <= IndigaugeLogLevel::Info {
@@ -186,27 +182,28 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
 
   pub(crate) fn send_heartbeat(&mut self, api_key: &str) {
     match **self.mode {
-      IndigaugeMode::Live => {
-        if let Ok(request) = self.build_post_request("sessions/heartbeat", api_key, &json!({})) {
+      IndigaugeMode::Live => match self.sdk_client().heartbeat(api_key) {
+        Ok(request) => {
           self
             .reqwest_client
             .send(request)
             .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              let status = trigger.event().status();
-              if status.is_success() {
-                if **log_level <= IndigaugeLogLevel::Info {
-                  info!(message = "Heartbeat sent successfully");
-                }
-              } else if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to update heartbeat", ?status);
-              }
+              log_response_outcome(
+                &log_level,
+                trigger.event().status(),
+                "Heartbeat sent successfully",
+                "Failed to update heartbeat",
+              );
             })
             .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send session heartbeat", error = ?trigger.event().error);
-              }
+              log_transport_error(&log_level, "Failed to send session heartbeat", &trigger.event().error);
             });
-        }
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build heartbeat request", ?error);
+          }
+        },
       },
       IndigaugeMode::Dev => {
         if **self.log_level <= IndigaugeLogLevel::Info {
@@ -232,27 +229,28 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     };
 
     match **self.mode {
-      IndigaugeMode::Live => {
-        if let Ok(request) = self.build_patch_request("sessions", api_key, &metadata) {
+      IndigaugeMode::Live => match self.sdk_client().update_metadata_value(api_key, &metadata) {
+        Ok(request) => {
           self
             .reqwest_client
             .send(request)
             .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              let status = trigger.event().status();
-              if status.is_success() {
-                if **log_level <= IndigaugeLogLevel::Info {
-                  info!(message = "Metadata updated successfully");
-                }
-              } else if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to update metadata", ?status);
-              }
+              log_response_outcome(
+                &log_level,
+                trigger.event().status(),
+                "Metadata updated successfully",
+                "Failed to update metadata",
+              );
             })
             .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if **log_level <= IndigaugeLogLevel::Error {
-                error!(message = "Failed to send session metadata update", error = ?trigger.event().error);
-              }
+              log_transport_error(&log_level, "Failed to send session metadata update", &trigger.event().error);
             });
-        }
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build metadata request", ?error);
+          }
+        },
       },
       IndigaugeMode::Dev => {
         if **self.log_level <= IndigaugeLogLevel::Info {
