@@ -110,7 +110,7 @@ where
     app.add_plugins(crate::feedback::FeedbackUiPlugin);
 
     app
-      .add_plugins(ReqwestPlugin::default())
+      .add_plugins(ReqwestPlugin)
       .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
