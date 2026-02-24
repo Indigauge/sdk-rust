@@ -1,4 +1,4 @@
-use indigauge_types::prelude::{IndigaugeConfig, IndigaugeLogLevel, IndigaugeMode};
+use indigauge_core::types::{IndigaugeConfig, IndigaugeLogLevel, IndigaugeMode};
 
 use bevy::prelude::*;
 

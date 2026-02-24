@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{plugin::GLOBAL_TX, session::SESSION_START_INSTANT};
 use indigauge_core::event::QueuedEvent;
-use indigauge_types::prelude::{EventPayload, EventPayloadCtx};
+use indigauge_core::types::{EventPayload, EventPayloadCtx};
 
 #[inline]
 /// Queues a validated event in the global sender if a session is active.

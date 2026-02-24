@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use crossbeam_channel::{Sender, bounded};
 use indigauge_core::event::{QueuedEvent, set_event_dispatcher};
-use indigauge_types::prelude::{IndigaugeLogLevel, IndigaugeMode};
+use indigauge_core::types::{IndigaugeLogLevel, IndigaugeMode};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 

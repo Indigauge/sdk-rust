@@ -4,7 +4,7 @@ use bevy::{diagnostic::SystemInfo, prelude::*, render::renderer::RenderAdapterIn
 
 use bevy::log::{error, info, warn};
 use indigauge_core::http::decode_api_response;
-use indigauge_types::prelude::{
+use indigauge_core::types::{
   ApiResponse, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload, StartSessionResponse,
 };
 

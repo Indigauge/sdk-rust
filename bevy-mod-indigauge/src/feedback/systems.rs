@@ -4,7 +4,6 @@ use crate::{
     observe_screenshot_toggle_click, observe_submit_click,
   },
   feedback::{components::*, helpers::*, resources::*, types::FeedbackCategory},
-  utils::select,
 };
 use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
@@ -12,6 +11,7 @@ use bevy::{
   prelude::*,
 };
 use bevy_text_edit::TextEditable;
+use indigauge_core::http::select;
 
 const LINE_HEIGHT: f32 = 21.;
 /// Despawns the active feedback panel UI tree.

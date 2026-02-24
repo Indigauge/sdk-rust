@@ -29,3 +29,7 @@ bytes = "1"
 [dependencies.reqwest]
 version = "0.12"
 features = ["json", "rustls-tls", "blocking"]
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+dirs = "6.0"
+uuid = { version = "1", features = ["v4"] }

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use indigauge_types::prelude::IndigaugeLogLevel;
+use indigauge_core::types::IndigaugeLogLevel;
 
 use crate::{
   config::BevyIndigaugeLogLevel,

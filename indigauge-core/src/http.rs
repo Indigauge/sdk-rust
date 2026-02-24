@@ -1,5 +1,7 @@
 use bytes::Bytes;
-use indigauge_types::prelude::{ApiResponse, BatchEventPayload, FeedbackPayload, IndigaugeConfig, StartSessionPayload};
+use indigauge_types::prelude::{
+  ApiResponse, BatchEventPayload, FeedbackPayload, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload,
+};
 use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
@@ -53,6 +55,11 @@ pub enum ResponseDisposition {
   Failure,
 }
 
+/// Generic selector helper used by UI and runtime code.
+pub fn select<T>(true_case: T, false_case: T, condition: bool) -> T {
+  if condition { true_case } else { false_case }
+}
+
 /// Classifies an HTTP status code into success/failure for observer handling.
 pub fn classify_status(status: StatusCode) -> ResponseDisposition {
   if status.is_success() {
@@ -60,6 +67,20 @@ pub fn classify_status(status: StatusCode) -> ResponseDisposition {
   } else {
     ResponseDisposition::Failure
   }
+}
+
+/// Decides whether to log response outcome at current log level.
+pub fn response_disposition_for_level(level: &IndigaugeLogLevel, status: StatusCode) -> Option<ResponseDisposition> {
+  match classify_status(status) {
+    ResponseDisposition::Success if level <= &IndigaugeLogLevel::Info => Some(ResponseDisposition::Success),
+    ResponseDisposition::Failure if level <= &IndigaugeLogLevel::Error => Some(ResponseDisposition::Failure),
+    _ => None,
+  }
+}
+
+/// Returns true if a transport error should be logged for the given log level.
+pub fn should_log_transport_error(level: &IndigaugeLogLevel) -> bool {
+  level <= &IndigaugeLogLevel::Error
 }
 
 /// Decodes a UTF-8 response body.
@@ -198,4 +219,28 @@ pub async fn send_request(client: &Client, request: Request) -> Result<SdkRespon
   let headers = response.headers().clone();
   let body = response.bytes().await?;
   Ok(SdkResponse { body, status, headers })
+}
+
+#[cfg(not(target_family = "wasm"))]
+/// Loads or creates a stable per-player id in platform preference storage.
+pub fn get_or_init_player_id(game_name: &str) -> String {
+  use std::fs;
+  use uuid::Uuid;
+
+  let game_folder_path = dirs::preference_dir().map(|dir| dir.join(game_name));
+
+  if let Some(game_folder_path) = game_folder_path {
+    let player_id_file_path = game_folder_path.join("player_id.txt");
+
+    if let Ok(player_id) = fs::read_to_string(&player_id_file_path) {
+      player_id
+    } else {
+      let new_player_id = Uuid::new_v4().to_string();
+      let _ = fs::create_dir_all(&game_folder_path);
+      let _ = fs::write(&player_id_file_path, &new_player_id);
+      new_player_id
+    }
+  } else {
+    Uuid::new_v4().to_string()
+  }
 }
