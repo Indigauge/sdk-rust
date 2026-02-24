@@ -6,6 +6,8 @@ use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
+use crate::utils::select;
+
 /// Errors that can occur when building SDK HTTP requests.
 #[derive(Debug)]
 pub enum SdkBuildError {
@@ -55,18 +57,9 @@ pub enum ResponseDisposition {
   Failure,
 }
 
-/// Generic selector helper used by UI and runtime code.
-pub fn select<T>(true_case: T, false_case: T, condition: bool) -> T {
-  if condition { true_case } else { false_case }
-}
-
 /// Classifies an HTTP status code into success/failure for observer handling.
 pub fn classify_status(status: StatusCode) -> ResponseDisposition {
-  if status.is_success() {
-    ResponseDisposition::Success
-  } else {
-    ResponseDisposition::Failure
-  }
+  select(ResponseDisposition::Success, ResponseDisposition::Failure, status.is_success())
 }
 
 /// Decides whether to log response outcome at current log level.
