@@ -9,12 +9,14 @@ use crate::{
 };
 
 /// Ends the active session when exit events are observed.
-pub fn handle_exit_event<E>(exit_events: MessageReader<E>, ig: BevyIndigauge, session_key: Res<SessionApiKey>)
+pub fn handle_exit_event<E>(exit_events: MessageReader<E>, ig: BevyIndigauge, session_key: Option<Res<SessionApiKey>>)
 where
   E: Message + std::fmt::Debug,
 {
   if !exit_events.is_empty() {
-    end_session(ig, session_key);
+    if let Some(key) = session_key {
+      end_session(ig, key);
+    }
   }
 }
 
@@ -108,22 +110,24 @@ pub(crate) fn update_metadata<M>(
   mut session_meta: ResMut<SessionMeta<M>>,
   metadata: Option<Res<M>>,
   mut ig: BevyIndigauge,
-  session_key: Res<SessionApiKey>,
+  session_key: Option<Res<SessionApiKey>>,
 ) where
   M: Resource + Serialize,
 {
   if session_meta.is_changed {
     session_meta.is_changed = false;
 
-    if let Some(metadata_resource) = metadata {
-      ig.update_metadata(&*metadata_resource, &session_key);
-    } else {
-      use bevy::log::warn;
-      use std::any::type_name;
+    if let Some(key) = session_key {
+      if let Some(metadata_resource) = metadata {
+        ig.update_metadata(&*metadata_resource, &key);
+      } else {
+        use bevy::log::warn;
+        use std::any::type_name;
 
-      let tn = type_name::<M>();
-      if tn.ne(type_name::<EmptySessionMeta>()) && **ig.log_level <= IndigaugeLogLevel::Warn {
-        warn!(message = "Metadata changed, but did not exist as a resource", type = tn);
+        let tn = type_name::<M>();
+        if tn.ne(type_name::<EmptySessionMeta>()) && **ig.log_level <= IndigaugeLogLevel::Warn {
+          warn!(message = "Metadata changed, but did not exist as a resource", type = tn);
+        }
       }
     }
   }

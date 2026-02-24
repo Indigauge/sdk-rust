@@ -34,8 +34,8 @@ pub fn observe_start_session_event(
   event: On<StartSessionEvent>,
   mut ig: BevyIndigauge,
   mut cmd: Commands,
-  sys_info: Res<SystemInfo>,
-  render_info: Res<RenderAdapterInfo>,
+  sys_info: Option<Res<SystemInfo>>,
+  render_info: Option<Res<RenderAdapterInfo>>,
 ) {
   if get_session_start_instant().is_some() {
     if **ig.log_level <= IndigaugeLogLevel::Warn {
@@ -70,14 +70,18 @@ pub fn observe_start_session_event(
   let player_id = None::<String>;
 
   let event = event.event();
-  let cores = sys_info.core_count.parse().map(bucket_cores).ok();
-  let memory = sys_info
-    .memory
-    .split('.')
-    .collect::<Vec<_>>()
-    .first()
-    .and_then(|m| m.parse().map(bucket_ram_gb).ok());
-  let cpu_family = coarsen_cpu_name(&sys_info.cpu);
+  let cores = sys_info
+    .as_ref()
+    .and_then(|i| i.core_count.parse().map(bucket_cores).ok());
+  let memory = sys_info.as_ref().and_then(|i| {
+    i.memory
+      .split('.')
+      .collect::<Vec<_>>()
+      .first()
+      .and_then(|m| m.parse().map(bucket_ram_gb).ok())
+  });
+  let cpu_family = sys_info.as_ref().and_then(|i| coarsen_cpu_name(&i.cpu));
+  let gpu = render_info.as_ref().map(|i| &i.name);
 
   let payload = StartSessionPayload {
     client_version: ig.config.game_version(),
@@ -88,7 +92,7 @@ pub fn observe_start_session_event(
     cpu_family: cpu_family.as_ref(),
     cores,
     memory,
-    gpu: Some(&render_info.name),
+    gpu,
   };
 
   match ig.sdk_client().start_session(&payload) {
