@@ -24,7 +24,7 @@ It’s designed to be easy to integrate and is powerful enough for production us
 ```toml
 [dependencies]
 bevy = "0.18"
-bevy-mod-indigauge = { version = "0.5" }
+bevy-mod-indigauge = { version = "0.6" }
 ```
 
 ### Feedback backend features
@@ -34,10 +34,10 @@ bevy-mod-indigauge = { version = "0.5" }
 
 ```toml
 # Keep default Bevy UI panel (no extra feature needed)
-bevy-mod-indigauge = { version = "0.5" }
+bevy-mod-indigauge = { version = "0.6" }
 
 # Enable optional bevy_egui feedback panel backend (native only)
-bevy-mod-indigauge = { version = "0.5", features = ["feedback_egui"] }
+bevy-mod-indigauge = { version = "0.6", features = ["feedback_egui"] }
 ```
 
 ## Examples
@@ -133,7 +133,7 @@ Send events to the Indigauge API through tracing. This is useful for debugging a
 ```toml
 [dependencies]
 bevy = { version = "0.18" }
-bevy-mod-indigauge = { version = "0.5", features = ["tracing"] }
+bevy-mod-indigauge = { version = "0.6", features = ["tracing"] }
 ```
 
 ```rust,ignore
