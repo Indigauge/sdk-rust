@@ -38,6 +38,11 @@ pub struct MessageInput;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[derive(Component)]
+/// Marker for the root container of the message input.
+pub struct MessageInputRoot;
+
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[derive(Component)]
 /// Marker for the question text root entity.
 pub struct QuestionTextRoot;
 

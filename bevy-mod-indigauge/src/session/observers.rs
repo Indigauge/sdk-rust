@@ -1,22 +1,23 @@
 use std::{env::consts::OS, time::Instant};
 
 use bevy::{diagnostic::SystemInfo, prelude::*, render::renderer::RenderAdapterInfo, state::state::FreelyMutableState};
-use bevy_mod_reqwest::{ReqwestErrorEvent, ReqwestResponseEvent};
 
-use indigauge_types::prelude::{
+use bevy::log::{error, info, warn};
+use indigauge_core::http::decode_api_response;
+use indigauge_core::types::{
   ApiResponse, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload, StartSessionResponse,
 };
 
 use crate::{
   config::BevyIndigaugeConfig,
   config::BevyIndigaugeMode,
-  plugin::GLOBAL_TX,
+  http_runtime::{ReqwestErrorEvent, ReqwestResponseEvent},
   prelude::*,
-  session::SESSION_START_INSTANT,
   session::resources::SessionApiKey,
   session::utils::{bucket_cores, bucket_ram_gb, coarsen_cpu_name},
   utils::BevyIndigauge,
 };
+use indigauge_core::state::{get_global_tx, get_session_start_instant, set_session_start_instant};
 
 /// Returns an observer that advances a Bevy state when session init completes.
 pub fn switch_state_after_session_init<S>(state: S) -> impl FnMut(On<IndigaugeInitDoneEvent>, ResMut<NextState<S>>)
@@ -33,10 +34,10 @@ pub fn observe_start_session_event(
   event: On<StartSessionEvent>,
   mut ig: BevyIndigauge,
   mut cmd: Commands,
-  sys_info: Res<SystemInfo>,
-  render_info: Res<RenderAdapterInfo>,
+  sys_info: Option<Res<SystemInfo>>,
+  render_info: Option<Res<RenderAdapterInfo>>,
 ) {
-  if SESSION_START_INSTANT.get().is_some() {
+  if get_session_start_instant().is_some() {
     if **ig.log_level <= IndigaugeLogLevel::Warn {
       warn!("Session already started");
     }
@@ -44,7 +45,7 @@ pub fn observe_start_session_event(
     return;
   }
 
-  if GLOBAL_TX.get().is_none() {
+  if get_global_tx().is_none() {
     cmd.trigger(IndigaugeInitDoneEvent::UnexpectedFailure("Global transaction not initialized".to_string()));
     return;
   }
@@ -69,14 +70,18 @@ pub fn observe_start_session_event(
   let player_id = None::<String>;
 
   let event = event.event();
-  let cores = sys_info.core_count.parse().map(bucket_cores).ok();
-  let memory = sys_info
-    .memory
-    .split('.')
-    .collect::<Vec<_>>()
-    .first()
-    .and_then(|m| m.parse().map(bucket_ram_gb).ok());
-  let cpu_family = coarsen_cpu_name(&sys_info.cpu);
+  let cores = sys_info
+    .as_ref()
+    .and_then(|i| i.core_count.parse().map(bucket_cores).ok());
+  let memory = sys_info.as_ref().and_then(|i| {
+    i.memory
+      .split('.')
+      .collect::<Vec<_>>()
+      .first()
+      .and_then(|m| m.parse().map(bucket_ram_gb).ok())
+  });
+  let cpu_family = sys_info.as_ref().and_then(|i| coarsen_cpu_name(&i.cpu));
+  let gpu = render_info.as_ref().map(|i| &i.name);
 
   let payload = StartSessionPayload {
     client_version: ig.config.game_version(),
@@ -87,12 +92,10 @@ pub fn observe_start_session_event(
     cpu_family: cpu_family.as_ref(),
     cores,
     memory,
-    gpu: Some(&render_info.name),
+    gpu,
   };
 
-  let reqwest_client = ig.build_post_request("sessions/start", ig.config.public_key(), &payload);
-
-  match reqwest_client {
+  match ig.sdk_client().start_session(&payload) {
     Ok(reqwest_client) => {
       ig.reqwest_client
         .send(reqwest_client)
@@ -114,7 +117,7 @@ pub fn on_start_session_response(
   log_level: Res<BevyIndigaugeLogLevel>,
   mode: Res<BevyIndigaugeMode>,
 ) {
-  let Ok(response) = trigger.event().deserialize_json::<ApiResponse<StartSessionResponse>>() else {
+  let Ok(response) = decode_api_response::<StartSessionResponse>(trigger.event().body()) else {
     if **log_level <= IndigaugeLogLevel::Error {
       error!("Failed to deserialize response");
     }
@@ -156,7 +159,7 @@ fn start_session(
   config: &IndigaugeConfig,
 ) {
   let start_instant = Instant::now();
-  if let Err(set_start_instance_err) = SESSION_START_INSTANT.set(start_instant) {
+  if let Err(set_start_instance_err) = set_session_start_instant(start_instant) {
     if **log_level <= IndigaugeLogLevel::Error {
       error!(message = "Failed to set session start instant", error = ?set_start_instance_err);
     }

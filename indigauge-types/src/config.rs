@@ -88,13 +88,31 @@ pub enum IndigaugeLogLevel {
   Silent,
 }
 
-#[derive(PartialEq, Default, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum IndigaugeMode {
-  /// Live mode sends data to the Indigauge API.
-  #[default]
+  /// Live mode sends data to the Indigauge API. Default in release builds.
   Live,
-  /// Dev mode only logs data to the console (if logging is enabled).
+  /// Dev mode only logs data to the console (if logging is enabled). Default in debug builds.
   Dev,
   /// Disabled mode does not send any data to the Indigauge API.
   Disabled,
+}
+
+impl IndigaugeMode {
+  /// Auto-selects the mode based on compile-time configuration.
+  ///
+  /// Returns `Dev` mode in debug builds and `Live` mode in release builds.
+  pub fn auto() -> Self {
+    if cfg!(debug_assertions) {
+      IndigaugeMode::Dev
+    } else {
+      IndigaugeMode::Live
+    }
+  }
+}
+
+impl Default for IndigaugeMode {
+  fn default() -> Self {
+    Self::auto()
+  }
 }

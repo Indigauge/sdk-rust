@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use indigauge_types::prelude::IndigaugeLogLevel;
+use indigauge_core::types::IndigaugeLogLevel;
 
 use crate::{
   config::BevyIndigaugeLogLevel,
@@ -7,18 +7,23 @@ use crate::{
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
 };
+use bevy::log::error;
 
 /// Flushes buffered events immediately when batch size threshold is reached.
-pub fn maybe_flush_events(mut ig: BevyIndigauge, session_key: Res<SessionApiKey>) {
-  if ig.buffered_events.events.len() >= ig.config.batch_size() {
-    ig.flush_events(&session_key);
+pub fn maybe_flush_events(mut ig: BevyIndigauge, session_key: Option<Res<SessionApiKey>>) {
+  if let Some(key) = session_key
+    && ig.buffered_events.events.len() >= ig.config.batch_size()
+  {
+    ig.flush_events(&key);
   }
 }
 
 /// Periodic flush system that falls back to heartbeat when no events are pending.
-pub fn flush_events(mut ig: BevyIndigauge, session_key: Res<SessionApiKey>) {
-  if ig.flush_events(&session_key) == 0 {
-    ig.send_heartbeat(&session_key);
+pub fn flush_events(mut ig: BevyIndigauge, session_key: Option<Res<SessionApiKey>>) {
+  if let Some(key) = session_key
+    && ig.flush_events(&key) == 0
+  {
+    ig.send_heartbeat(&key);
   }
 }
 

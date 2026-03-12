@@ -1,10 +1,7 @@
-use std::{
-  marker::PhantomData,
-  time::{Duration, Instant},
-};
+use std::marker::PhantomData;
+use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer, window::WindowCloseRequested};
-use once_cell::sync::OnceCell;
 use serde::Serialize;
 
 use crate::{
@@ -18,8 +15,6 @@ pub(crate) mod observers;
 pub mod resources;
 pub(crate) mod systems;
 pub mod utils;
-
-pub(crate) static SESSION_START_INSTANT: OnceCell<Instant> = OnceCell::new();
 
 /// Plugin that manages session lifecycle, metadata updates, and exit handling.
 pub struct SessionPlugin<M: Resource + Serialize> {

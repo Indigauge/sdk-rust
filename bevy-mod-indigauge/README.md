@@ -136,7 +136,7 @@ bevy = { version = "0.17", features = ["bevy_mod_indigauge"] }
 bevy-mod-indigauge = { version = "0.5", features = ["tracing"] }
 ```
 
-```rust,no_run
+```rust,ignore
 use std::time::Duration;
 use bevy::{log::{LogPlugin, BoxedLayer}, prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::{prelude::*, tracing::{IndigaugeLayer, default_bevy_indigauge_layer}};

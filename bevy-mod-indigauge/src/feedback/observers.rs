@@ -1,28 +1,26 @@
 use std::{ops::Deref, time::Instant};
 
+use crate::{
+  feedback::components::FeedbackPanel,
+  feedback::resources::{FeedbackFormState, TakeScreenshot},
+  http_runtime::ReqwestResponseEvent,
+  prelude::*,
+  session::resources::SessionApiKey,
+  utils::BevyIndigauge,
+};
+use bevy::log::error;
 use bevy::{
   prelude::*,
   render::view::screenshot::{Screenshot, ScreenshotCaptured},
   state::state::FreelyMutableState,
 };
-use bevy_mod_reqwest::ReqwestResponseEvent;
 use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
-use indigauge_types::prelude::{FeedbackPayload, IdResponse};
-
-use crate::{
-  feedback::components::FeedbackPanel,
-  feedback::resources::{FeedbackFormState, TakeScreenshot},
-  prelude::*,
-  session::SESSION_START_INSTANT,
-  session::resources::SessionApiKey,
-  utils::BevyIndigauge,
-};
+use indigauge_core::types::{FeedbackPayload, IdResponse};
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-use crate::{
-  feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText},
-  utils::select,
-};
+use crate::feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText};
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+use indigauge_core::utils::select;
 
 /// Returns an observer that advances a state when feedback panel spawns.
 pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(On<Add, FeedbackPanel>, ResMut<NextState<S>>)
@@ -126,7 +124,7 @@ pub(crate) fn submit_feedback(
   session_key: &SessionApiKey,
   message: String,
 ) {
-  if let Some(start_instant) = SESSION_START_INSTANT.get() {
+  if let Some(start_instant) = indigauge_core::state::get_session_start_instant() {
     let elapsed_ms = Instant::now().duration_since(*start_instant).as_millis();
 
     let msg = message
