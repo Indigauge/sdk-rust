@@ -176,7 +176,7 @@ fn maybe_take_screenshot(
             let enc = PngEncoder::new(&mut png);
 
             if enc
-              .write_image(&data, dyn_img.width(), dyn_img.height(), ColorType::Rgb8)
+              .write_image(&data, dyn_img.width(), dyn_img.height(), ColorType::Rgb8.into())
               .is_ok()
             {
               ig.send_feedback_screenshot(&api_key, &feedback_id, png);
