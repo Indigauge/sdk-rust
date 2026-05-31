@@ -28,6 +28,7 @@ pub struct ButtonPressedStyle {
 }
 
 #[derive(Component)]
+#[require(Pickable::IGNORE)]
 /// Marker component for the root feedback panel entity.
 pub struct FeedbackPanel;
 

@@ -61,10 +61,8 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           }
         },
       },
-      IndigaugeMode::Dev => {
-        if **self.log_level <= IndigaugeLogLevel::Info {
-          info!(message = "DEVMODE: Sent feedback screenshot");
-        }
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!(message = "DEVMODE: Sent feedback screenshot");
       },
       _ => {},
     }
@@ -93,10 +91,8 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           }
         },
       },
-      IndigaugeMode::Dev => {
-        if **self.log_level <= IndigaugeLogLevel::Info {
-          info!(message = "DEVMODE: Sent feedback", feedback = ?payload);
-        }
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!(message = "DEVMODE: Sent feedback", feedback = ?payload);
       },
       _ => {},
     }
@@ -145,10 +141,8 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           }
         },
       },
-      IndigaugeMode::Dev => {
-        if **self.log_level <= IndigaugeLogLevel::Info {
-          info!(message = "DEVMODE: sending event batch", count = events.events.len());
-        }
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!(message = "DEVMODE: sending event batch", count = events.events.len());
       },
       _ => {},
     }
@@ -185,10 +179,8 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           }
         },
       },
-      IndigaugeMode::Dev => {
-        if **self.log_level <= IndigaugeLogLevel::Info {
-          info!("DEVMODE: heartbeat");
-        }
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!("DEVMODE: heartbeat");
       },
       _ => {},
     }
@@ -236,10 +228,8 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           }
         },
       },
-      IndigaugeMode::Dev => {
-        if **self.log_level <= IndigaugeLogLevel::Info {
-          info!(message = "DEVMODE: update metadata", ?metadata);
-        }
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!(message = "DEVMODE: update metadata", ?metadata);
       },
       _ => {},
     }
