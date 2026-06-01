@@ -22,11 +22,7 @@ impl QueuedEvent {
 
   /// Validates the event type format.
   pub fn validate(&self) -> Result<(), String> {
-    let (ns, t) = self.payload.event_type().split_once('.').ok_or("Invalid event type")?;
-    if ns.trim().is_empty() || t.trim().is_empty() {
-      return Err("Invalid event type".to_string());
-    }
-    Ok(())
+    validate_event_type(self.payload.event_type()).map_err(str::to_string)
   }
 }
 
@@ -280,6 +276,8 @@ pub mod macros {
 
 #[cfg(test)]
 mod tests {
+  use indigauge_types::prelude::EventPayload;
+
   use super::*;
 
   #[test]
@@ -289,5 +287,14 @@ mod tests {
     assert!(validate_event_type(".start").is_err());
     assert!(validate_event_type("game.").is_err());
     assert!(validate_event_type("game..start").is_err());
+  }
+
+  #[test]
+  fn queued_event_validation_uses_same_rules() {
+    let invalid = QueuedEvent::new(EventPayload::new("game.start_now", "info", None, 0));
+    let valid = QueuedEvent::new(EventPayload::new("game.start", "info", None, 0));
+
+    assert!(invalid.validate().is_err());
+    assert!(valid.validate().is_ok());
   }
 }

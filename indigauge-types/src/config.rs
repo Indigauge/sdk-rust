@@ -30,7 +30,7 @@ impl IndigaugeConfig {
 
   /// Returns `true` if a non-empty public key is configured.
   pub fn has_public_key(&self) -> bool {
-    !self.public_key.is_empty()
+    !self.public_key.trim().is_empty()
   }
 
   /// Returns the configured Indigauge public key.
@@ -45,7 +45,7 @@ impl IndigaugeConfig {
 
   /// Builds a versioned API URL for a relative path.
   pub fn api_url(&self, path: &str) -> String {
-    format!("{}/v1/{}", &self.api_base, path)
+    format!("{}/v1/{}", self.api_base.trim_end_matches('/'), path.trim_start_matches('/'))
   }
 
   /// Returns the ingest API base URL.
@@ -76,6 +76,27 @@ impl IndigaugeConfig {
   /// Returns request timeout used for outbound HTTP calls.
   pub fn request_timeout(&self) -> Duration {
     self.request_timeout
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn api_url_normalizes_slashes() {
+    let mut config = IndigaugeConfig::new("game", "key", "1.0.0");
+    config.api_base = "https://ingest.indigauge.com/".to_string();
+
+    assert_eq!(config.api_url("/events/batch"), "https://ingest.indigauge.com/v1/events/batch");
+  }
+
+  #[test]
+  fn whitespace_public_key_is_treated_as_missing() {
+    let mut config = IndigaugeConfig::new("game", "key", "1.0.0");
+    config.public_key = "   ".to_string();
+
+    assert!(!config.has_public_key());
   }
 }
 
