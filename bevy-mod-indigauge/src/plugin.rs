@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy::prelude::*;
-use indigauge_core::state::init;
+use indigauge_core::state::{get_global_tx, init};
 use indigauge_core::types::{IndigaugeLogLevel, IndigaugeMode};
 use serde::Serialize;
 
@@ -77,6 +77,10 @@ where
   M: Resource + Serialize,
 {
   fn build(&self, app: &mut App) {
+    if app.is_plugin_added::<Self>() {
+      return;
+    }
+
     let config = BevyIndigaugeConfig::new(&self.game_name, &self.public_key, &self.game_version);
 
     if matches!(*self.mode, IndigaugeMode::Live | IndigaugeMode::Dev) {
@@ -93,6 +97,10 @@ where
           );
         }
         app.insert_resource(EventQueueReceiver::new(rx));
+      } else if get_global_tx().is_some() && *self.log_level <= IndigaugeLogLevel::Warn {
+        warn!(
+          "Indigauge core was already initialized in this process. This app will not own the shared event queue, so queued events must be flushed by the app that initialized Indigauge."
+        );
       }
     }
 
