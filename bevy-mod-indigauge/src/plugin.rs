@@ -77,6 +77,10 @@ where
   M: Resource + Serialize,
 {
   fn build(&self, app: &mut App) {
+    if app.is_plugin_added::<Self>() {
+      return;
+    }
+
     let config = BevyIndigaugeConfig::new(&self.game_name, &self.public_key, &self.game_version);
 
     if matches!(*self.mode, IndigaugeMode::Live | IndigaugeMode::Dev) {
