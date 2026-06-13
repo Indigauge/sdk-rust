@@ -1,4 +1,4 @@
-use crate::http::SdkBlockingHttpClient;
+use crate::runtime::IndigaugeBlockingRuntimeClient;
 use indigauge_types::prelude::{EventPayload, EventPayloadCtx, IndigaugeConfig, StartSessionResponse};
 use serde_json::json;
 use std::time::Instant;
@@ -10,6 +10,8 @@ pub fn panic_handler_with_config(
   session_api_key: String,
   session_start: Instant,
 ) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
+  let sdk_client = IndigaugeBlockingRuntimeClient::new(config);
+
   move |info| {
     if session_api_key == StartSessionResponse::dev().session_token {
       return;
@@ -29,9 +31,6 @@ pub fn panic_handler_with_config(
     });
 
     let payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
-    let client = reqwest::blocking::Client::new();
-    let sdk_client = SdkBlockingHttpClient::new(&client, &config);
-
     if let Ok(request) = sdk_client.event(&session_api_key, &payload) {
       let _ = sdk_client.send(request);
     }

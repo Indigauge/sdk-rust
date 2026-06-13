@@ -3,6 +3,7 @@
 pub mod event;
 pub mod hardware;
 pub mod http;
+pub mod runtime;
 pub mod state;
 pub mod types {
   pub use indigauge_types::prelude::*;
@@ -27,6 +28,9 @@ pub mod prelude {
   pub use crate::types::*;
   pub use crate::utils::select;
   pub use crate::{enqueue_ig_event, ig_debug, ig_error, ig_event, ig_info, ig_trace, ig_warn};
+  pub use crate::runtime::IndigaugeRuntimeClient;
+  #[cfg(not(target_family = "wasm"))]
+  pub use crate::runtime::IndigaugeBlockingRuntimeClient;
 
   #[cfg(feature = "panic_handler")]
   pub use crate::panic::{panic_handler, panic_handler_with_config};
