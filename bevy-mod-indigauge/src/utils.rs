@@ -1,6 +1,7 @@
 use bevy::ecs::observer::On;
-use bevy::ecs::system::{Res, ResMut, SystemParam};
-use bevy::log::{error, info};
+use bevy::ecs::system::{Query, Res, ResMut, SystemParam};
+use bevy::log::{error, info, warn};
+use bevy::prelude::Component;
 use indigauge_core::http::{
   ResponseDisposition, SdkHttpClient, get_or_init_player_id, response_disposition_for_level, should_log_transport_error,
 };
@@ -8,8 +9,27 @@ use indigauge_core::types::BatchEventPayload;
 use serde::Serialize;
 
 use crate::config::*;
-use crate::event::resources::BufferedEvents;
-use crate::http_runtime::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
+use crate::event::resources::{BufferedEvents, EventPostingDisabled};
+use crate::http_runtime::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent, StatusCode};
+
+const EVENT_BATCH_MAX_RETRIES: u8 = 3;
+
+#[derive(Component, Clone)]
+struct EventBatchRetryRequest {
+  api_key: String,
+  events: BatchEventPayload,
+  retries: u8,
+}
+
+impl EventBatchRetryRequest {
+  fn new(api_key: &str, events: BatchEventPayload) -> Self {
+    Self {
+      api_key: api_key.to_string(),
+      events,
+      retries: 0,
+    }
+  }
+}
 
 #[cfg(feature = "feedback")]
 use indigauge_core::types::FeedbackPayload;
@@ -119,21 +139,9 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
           self
             .reqwest_client
             .send(request)
-            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              match response_disposition_for_level(&log_level, trigger.event().status()) {
-                Some(ResponseDisposition::Success) => info!(message = "Event batch sent successfully"),
-                Some(ResponseDisposition::Failure) => {
-                  let status = trigger.event().status();
-                  error!(message = "Failed to send event batch", ?status);
-                },
-                None => {},
-              }
-            })
-            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
-              if should_log_transport_error(&log_level) {
-                error!(message = "Failed to send event batch", error = ?trigger.event().error);
-              }
-            });
+            .insert(EventBatchRetryRequest::new(api_key, events.clone()))
+            .on_response(handle_event_batch_response)
+            .on_error(handle_event_batch_error);
         },
         Err(error) => {
           if **self.log_level <= IndigaugeLogLevel::Error {
@@ -238,5 +246,135 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
   #[cfg(not(target_family = "wasm"))]
   pub(crate) fn get_or_init_player_id(&self) -> String {
     get_or_init_player_id(self.config.game_name())
+  }
+}
+
+fn handle_event_batch_response(
+  trigger: On<ReqwestResponseEvent>,
+  mut reqwest_client: BevyReqwest,
+  config: Res<BevyIndigaugeConfig>,
+  log_level: Res<BevyIndigaugeLogLevel>,
+  mut event_posting_disabled: ResMut<EventPostingDisabled>,
+  mut buffered_events: ResMut<BufferedEvents>,
+  mut retry_requests: Query<&mut EventBatchRetryRequest>,
+) {
+  let status = trigger.event().status();
+
+  if status == StatusCode::OK {
+    if **log_level <= IndigaugeLogLevel::Info {
+      info!(message = "Event batch sent successfully");
+    }
+    return;
+  }
+
+  if status == StatusCode::TOO_MANY_REQUESTS {
+    event_posting_disabled.0 = true;
+    buffered_events.events.clear();
+
+    if **log_level <= IndigaugeLogLevel::Error {
+      error!(message = "Event posting disabled after rate limit response", ?status);
+    }
+    return;
+  }
+
+  let Ok(mut retry_request) = retry_requests.get_mut(trigger.event().entity()) else {
+    if **log_level <= IndigaugeLogLevel::Error {
+      error!(message = "Failed to send event batch", ?status);
+    }
+    return;
+  };
+
+  if event_posting_disabled.0 {
+    return;
+  }
+
+  if retry_request.retries >= EVENT_BATCH_MAX_RETRIES {
+    if **log_level <= IndigaugeLogLevel::Error {
+      error!(message = "Failed to send event batch after retries", ?status, retries = retry_request.retries);
+    }
+    return;
+  }
+
+  retry_request.retries += 1;
+
+  if **log_level <= IndigaugeLogLevel::Warn {
+    warn!(
+      message = "Retrying event batch after failed response",
+      ?status,
+      retry = retry_request.retries,
+      max_retries = EVENT_BATCH_MAX_RETRIES
+    );
+  }
+
+  match SdkHttpClient::new(&reqwest_client, &config).event_batch(&retry_request.api_key, &retry_request.events) {
+    Ok(request) => {
+      if let Err(error) = reqwest_client.send_using_entity(trigger.event().entity(), request)
+        && **log_level <= IndigaugeLogLevel::Error
+      {
+        error!(message = "Failed to retry event batch", ?error);
+      }
+    },
+    Err(error) => {
+      if **log_level <= IndigaugeLogLevel::Error {
+        error!(message = "Failed to build event batch retry request", ?error);
+      }
+    },
+  }
+}
+
+fn handle_event_batch_error(
+  trigger: On<ReqwestErrorEvent>,
+  mut reqwest_client: BevyReqwest,
+  config: Res<BevyIndigaugeConfig>,
+  log_level: Res<BevyIndigaugeLogLevel>,
+  event_posting_disabled: Res<EventPostingDisabled>,
+  mut retry_requests: Query<&mut EventBatchRetryRequest>,
+) {
+  if event_posting_disabled.0 {
+    return;
+  }
+
+  let Ok(mut retry_request) = retry_requests.get_mut(trigger.event().entity) else {
+    if should_log_transport_error(&log_level) {
+      error!(message = "Failed to send event batch", error = ?trigger.event().error);
+    }
+    return;
+  };
+
+  if retry_request.retries >= EVENT_BATCH_MAX_RETRIES {
+    if should_log_transport_error(&log_level) {
+      error!(
+        message = "Failed to send event batch after retries",
+        error = ?trigger.event().error,
+        retries = retry_request.retries
+      );
+    }
+    return;
+  }
+
+  retry_request.retries += 1;
+
+  if **log_level <= IndigaugeLogLevel::Warn {
+    warn!(
+      message = "Retrying event batch after transport error",
+      error = ?trigger.event().error,
+      retry = retry_request.retries,
+      max_retries = EVENT_BATCH_MAX_RETRIES
+    );
+  }
+
+  match SdkHttpClient::new(&reqwest_client, &config).event_batch(&retry_request.api_key, &retry_request.events) {
+    Ok(request) => {
+      if let Err(error) = reqwest_client.send_using_entity(trigger.event().entity, request)
+        && should_log_transport_error(&log_level)
+      {
+        error!(message = "Failed to retry event batch", ?error);
+      }
+    },
+    Err(error) => {
+      if **log_level <= IndigaugeLogLevel::Error {
+        error!(message = "Failed to build event batch retry request", ?error);
+      }
+    },
   }
 }

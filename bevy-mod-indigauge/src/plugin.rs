@@ -9,7 +9,7 @@ use crate::{
   config::*,
   event::{
     EventsPlugin,
-    resources::{BufferedEvents, EventQueueReceiver},
+    resources::{BufferedEvents, EventPostingDisabled, EventQueueReceiver},
   },
   http_runtime::ReqwestPlugin,
   session::{SessionPlugin, resources::EmptySessionMeta},
@@ -112,6 +112,7 @@ where
       .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
+      .insert_resource(EventPostingDisabled::default())
       .insert_resource(self.mode.clone())
       .insert_resource(config);
   }
