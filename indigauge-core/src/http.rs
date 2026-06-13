@@ -3,9 +3,9 @@ use indigauge_types::prelude::{
   ApiResponse, BatchEventPayload, EventPayload, FeedbackPayload, IndigaugeConfig, IndigaugeLogLevel,
   StartSessionPayload,
 };
-use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 #[cfg(not(target_family = "wasm"))]
 use reqwest::blocking::{Client as BlockingClient, Request as BlockingRequest};
+use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
@@ -267,7 +267,11 @@ impl<'a> SdkBlockingHttpClient<'a> {
   }
 
   /// Builds a blocking event batch ingest request.
-  pub fn event_batch(&self, session_token: &str, payload: &BatchEventPayload) -> Result<BlockingRequest, SdkBuildError> {
+  pub fn event_batch(
+    &self,
+    session_token: &str,
+    payload: &BatchEventPayload,
+  ) -> Result<BlockingRequest, SdkBuildError> {
     self.json_request(Method::POST, "events/batch", session_token, payload)
   }
 

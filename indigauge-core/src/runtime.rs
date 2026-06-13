@@ -201,11 +201,7 @@ impl IndigaugeBlockingRuntimeClient {
   }
 
   /// Builds a feedback request.
-  pub fn feedback(
-    &self,
-    session_token: &str,
-    payload: &FeedbackPayload<'_>,
-  ) -> Result<BlockingRequest, SdkBuildError> {
+  pub fn feedback(&self, session_token: &str, payload: &FeedbackPayload<'_>) -> Result<BlockingRequest, SdkBuildError> {
     self.http().feedback(session_token, payload)
   }
 

@@ -25,9 +25,7 @@ pub fn panic_handler_with_config(
       .collect::<Vec<_>>();
 
     if !pending_events.is_empty() {
-      let payload = BatchEventPayload {
-        events: pending_events,
-      };
+      let payload = BatchEventPayload { events: pending_events };
 
       if let Ok(request) = sdk_client.event_batch(&session_api_key, &payload) {
         let _ = sdk_client.send(request);

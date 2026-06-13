@@ -17,13 +17,17 @@ fn pending_events_lock() -> &'static Mutex<VecDeque<QueuedEvent>> {
 
 /// Tracks an enqueued event as pending delivery.
 pub fn track_pending_event(event: QueuedEvent) {
-  let mut pending = pending_events_lock().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+  let mut pending = pending_events_lock()
+    .lock()
+    .unwrap_or_else(|poisoned| poisoned.into_inner());
   pending.push_back(event);
 }
 
 /// Clears up to `count` pending events from the front of the queue.
 pub fn clear_pending_event_count(count: usize) {
-  let mut pending = pending_events_lock().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+  let mut pending = pending_events_lock()
+    .lock()
+    .unwrap_or_else(|poisoned| poisoned.into_inner());
   for _ in 0..count.min(pending.len()) {
     let _ = pending.pop_front();
   }
@@ -31,7 +35,9 @@ pub fn clear_pending_event_count(count: usize) {
 
 /// Drains and returns all currently tracked pending events.
 pub fn drain_pending_events() -> Vec<QueuedEvent> {
-  let mut pending = pending_events_lock().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+  let mut pending = pending_events_lock()
+    .lock()
+    .unwrap_or_else(|poisoned| poisoned.into_inner());
   pending.drain(..).collect()
 }
 

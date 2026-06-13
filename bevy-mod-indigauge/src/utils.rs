@@ -39,7 +39,10 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
   #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
     match **self.mode {
-      IndigaugeMode::Live => match self.runtime_client().feedback_screenshot(api_key, feedback_id, image_data) {
+      IndigaugeMode::Live => match self
+        .runtime_client()
+        .feedback_screenshot(api_key, feedback_id, image_data)
+      {
         Ok(request) => {
           self
             .reqwest_client
