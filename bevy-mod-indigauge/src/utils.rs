@@ -5,6 +5,7 @@ use indigauge_core::http::{
   ResponseDisposition, get_or_init_player_id, response_disposition_for_level, should_log_transport_error,
 };
 use indigauge_core::runtime::IndigaugeRuntimeClient;
+use indigauge_core::state::clear_pending_event_count;
 use indigauge_core::types::BatchEventPayload;
 use serde::Serialize;
 
@@ -113,6 +114,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
         .map(|event| event.into_inner())
         .collect::<Vec<_>>(),
     };
+    clear_pending_event_count(events.events.len());
 
     match **self.mode {
       IndigaugeMode::Live => match self.runtime_client().event_batch(api_key, &events) {

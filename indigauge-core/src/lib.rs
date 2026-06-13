@@ -31,6 +31,7 @@ pub mod prelude {
   pub use crate::runtime::IndigaugeRuntimeClient;
   #[cfg(not(target_family = "wasm"))]
   pub use crate::runtime::IndigaugeBlockingRuntimeClient;
+  pub use crate::state::{clear_pending_event_count, drain_pending_events, track_pending_event};
 
   #[cfg(feature = "panic_handler")]
   pub use crate::panic::{panic_handler, panic_handler_with_config};

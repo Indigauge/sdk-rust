@@ -31,6 +31,8 @@ fn main() {
 - `panic_handler` — capture panics as events (native targets only).
 - `tracing` — expose `IndigaugeLayer` and `IndigaugeSink` to ship tracing events.
 
+When `panic_handler` is enabled, the config-based panic hook also attempts to flush tracked pending events as a batch before sending the crash event and ending the session.
+
 ## Framework-agnostic runtime usage
 
 Use `indigauge-core` directly when integrating with engines beyond Bevy (e.g. ggez, macroquad, Fyrox).
@@ -47,6 +49,8 @@ let request = sdk.event("SESSION_TOKEN", &event)?;
 let _response = sdk.send(request)?;
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
+
+If you build your own engine adapter, call `clear_pending_event_count` after draining/sending queued events so crash-time flush only includes unsent events.
 
 ## License
 

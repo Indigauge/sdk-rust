@@ -1,4 +1,6 @@
 use crate::runtime::IndigaugeBlockingRuntimeClient;
+use crate::state::drain_pending_events;
+use crate::types::BatchEventPayload;
 use indigauge_types::prelude::{EventPayload, EventPayloadCtx, IndigaugeConfig, StartSessionResponse};
 use serde_json::json;
 use std::time::Instant;
@@ -15,6 +17,21 @@ pub fn panic_handler_with_config(
   move |info| {
     if session_api_key == StartSessionResponse::dev().session_token {
       return;
+    }
+
+    let pending_events = drain_pending_events()
+      .into_iter()
+      .map(|event| event.into_inner())
+      .collect::<Vec<_>>();
+
+    if !pending_events.is_empty() {
+      let payload = BatchEventPayload {
+        events: pending_events,
+      };
+
+      if let Ok(request) = sdk_client.event_batch(&session_api_key, &payload) {
+        let _ = sdk_client.send(request);
+      }
     }
 
     let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
