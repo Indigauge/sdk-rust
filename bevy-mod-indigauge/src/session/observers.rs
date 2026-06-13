@@ -185,9 +185,8 @@ fn start_session(
   {
     use crate::session::utils::panic_handler;
 
-    let host_origin = config.api_base().to_owned();
     let session_start = start_instant;
-    std::panic::set_hook(Box::new(panic_handler(host_origin, key.clone(), session_start)));
+    std::panic::set_hook(Box::new(panic_handler(config.clone(), key.clone(), session_start)));
   }
 
   commands.insert_resource(SessionApiKey::new(key));
