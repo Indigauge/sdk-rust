@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use bytes::Bytes;
 use indigauge_types::prelude::{
   ApiResponse, BatchEventPayload, EventPayload, FeedbackPayload, IndigaugeConfig, IndigaugeLogLevel,
@@ -59,6 +61,15 @@ pub struct SdkResponse {
   pub body: Bytes,
   pub status: StatusCode,
   pub headers: HeaderMap,
+}
+
+impl Debug for SdkResponse {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("SdkResponse")
+      .field("status", &self.status)
+      .field("headers", &self.headers)
+      .finish()
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

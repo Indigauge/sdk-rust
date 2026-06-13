@@ -45,12 +45,9 @@ pub fn panic_handler_with_config(
       module: None,
     });
 
-    let payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
-    if let Ok(request) = sdk_client.event(&session_api_key, &payload) {
-      let _ = sdk_client.send(request);
-    }
+    let _payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
 
-    if let Ok(request) = sdk_client.end_session(&session_api_key, "panic") {
+    if let Ok(request) = sdk_client.end_session(&session_api_key, "crashed") {
       let _ = sdk_client.send(request);
     }
   }
@@ -95,7 +92,7 @@ pub fn panic_handler(
     let _ = client
       .post(&end_session_endpoint)
       .header("X-Indigauge-Key", &session_api_key)
-      .json(&json!({"reason": "panic"}))
+      .json(&json!({"reason": "crashed"}))
       .send();
   }
 }
