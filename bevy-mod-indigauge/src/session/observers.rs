@@ -95,7 +95,7 @@ pub fn observe_start_session_event(
     gpu,
   };
 
-  match ig.sdk_client().start_session(&payload) {
+  match ig.runtime_client().start_session(&payload) {
     Ok(reqwest_client) => {
       ig.reqwest_client
         .send(reqwest_client)
@@ -185,9 +185,13 @@ fn start_session(
   {
     use crate::session::utils::panic_handler;
 
-    let host_origin = config.api_base().to_owned();
     let session_start = start_instant;
-    std::panic::set_hook(Box::new(panic_handler(host_origin, key.clone(), session_start)));
+    let previous_hook = std::panic::take_hook();
+    let indigauge_hook = panic_handler(config.clone(), key.clone(), session_start);
+    std::panic::set_hook(Box::new(move |info| {
+      indigauge_hook(info);
+      previous_hook(info);
+    }));
   }
 
   commands.insert_resource(SessionApiKey::new(key));

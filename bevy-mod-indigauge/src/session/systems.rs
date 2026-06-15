@@ -86,7 +86,7 @@ pub fn start_default_session(mut commands: Commands) {
 pub fn end_session(mut ig: BevyIndigauge, session_key: Res<SessionApiKey>) {
   ig.flush_events(&session_key);
 
-  match ig.sdk_client().end_session(&session_key, "ended") {
+  match ig.runtime_client().end_session(&session_key, "ended") {
     Ok(request) => {
       ig.reqwest_client.send(request);
     },

@@ -2,8 +2,10 @@ use bevy::ecs::observer::On;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
 use indigauge_core::http::{
-  ResponseDisposition, SdkHttpClient, get_or_init_player_id, response_disposition_for_level, should_log_transport_error,
+  ResponseDisposition, get_or_init_player_id, response_disposition_for_level, should_log_transport_error,
 };
+use indigauge_core::runtime::IndigaugeRuntimeClient;
+use indigauge_core::state::clear_pending_event_count;
 use indigauge_core::types::BatchEventPayload;
 use serde::Serialize;
 
@@ -30,14 +32,17 @@ pub struct BevyIndigauge<'w, 's> {
 }
 
 impl<'w, 's> BevyIndigauge<'w, 's> {
-  pub(crate) fn sdk_client(&self) -> SdkHttpClient<'_> {
-    SdkHttpClient::new(&self.reqwest_client, &self.config)
+  pub(crate) fn runtime_client(&self) -> IndigaugeRuntimeClient {
+    IndigaugeRuntimeClient::with_client(self.config.0.clone(), self.reqwest_client.client().clone())
   }
 
   #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
     match **self.mode {
-      IndigaugeMode::Live => match self.sdk_client().feedback_screenshot(api_key, feedback_id, image_data) {
+      IndigaugeMode::Live => match self
+        .runtime_client()
+        .feedback_screenshot(api_key, feedback_id, image_data)
+      {
         Ok(request) => {
           self
             .reqwest_client
@@ -75,7 +80,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>,
   {
     match **self.mode {
-      IndigaugeMode::Live => match self.sdk_client().feedback(api_key, payload) {
+      IndigaugeMode::Live => match self.runtime_client().feedback(api_key, payload) {
         Ok(request) => {
           self.reqwest_client.send(request).on_response(on_response).on_error(
             |trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
@@ -112,9 +117,10 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
         .map(|event| event.into_inner())
         .collect::<Vec<_>>(),
     };
+    clear_pending_event_count(events.events.len());
 
     match **self.mode {
-      IndigaugeMode::Live => match self.sdk_client().event_batch(api_key, &events) {
+      IndigaugeMode::Live => match self.runtime_client().event_batch(api_key, &events) {
         Ok(request) => {
           self
             .reqwest_client
@@ -152,7 +158,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
 
   pub(crate) fn send_heartbeat(&mut self, api_key: &str) {
     match **self.mode {
-      IndigaugeMode::Live => match self.sdk_client().heartbeat(api_key) {
+      IndigaugeMode::Live => match self.runtime_client().heartbeat(api_key) {
         Ok(request) => {
           self
             .reqwest_client
@@ -201,7 +207,7 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     };
 
     match **self.mode {
-      IndigaugeMode::Live => match self.sdk_client().update_metadata_value(api_key, &metadata) {
+      IndigaugeMode::Live => match self.runtime_client().update_metadata_value(api_key, &metadata) {
         Ok(request) => {
           self
             .reqwest_client

@@ -1,7 +1,12 @@
+use std::fmt::Debug;
+
 use bytes::Bytes;
 use indigauge_types::prelude::{
-  ApiResponse, BatchEventPayload, FeedbackPayload, IndigaugeConfig, IndigaugeLogLevel, StartSessionPayload,
+  ApiResponse, BatchEventPayload, EventPayload, FeedbackPayload, IndigaugeConfig, IndigaugeLogLevel,
+  StartSessionPayload,
 };
+#[cfg(not(target_family = "wasm"))]
+use reqwest::blocking::{Client as BlockingClient, Request as BlockingRequest};
 use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
@@ -44,11 +49,27 @@ pub struct SdkHttpClient<'a> {
   config: &'a IndigaugeConfig,
 }
 
+/// Blocking HTTP builder for game loops and crash paths without async runtimes.
+#[cfg(not(target_family = "wasm"))]
+pub struct SdkBlockingHttpClient<'a> {
+  client: &'a BlockingClient,
+  config: &'a IndigaugeConfig,
+}
+
 /// Response payload returned by SDK send helpers.
 pub struct SdkResponse {
   pub body: Bytes,
   pub status: StatusCode,
   pub headers: HeaderMap,
+}
+
+impl Debug for SdkResponse {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("SdkResponse")
+      .field("status", &self.status)
+      .field("headers", &self.headers)
+      .finish()
+  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -168,6 +189,11 @@ impl<'a> SdkHttpClient<'a> {
     self.json_request(Method::POST, "events/batch", session_token, payload)
   }
 
+  /// Builds a single event ingest request.
+  pub fn event(&self, session_token: &str, payload: &EventPayload) -> Result<Request, SdkBuildError> {
+    self.json_request(Method::POST, "events", session_token, payload)
+  }
+
   /// Builds a metadata update request.
   pub fn update_metadata<T: Serialize>(&self, session_token: &str, metadata: &T) -> Result<Request, SdkBuildError> {
     let value = serde_json::to_value(metadata)?;
@@ -205,12 +231,123 @@ impl<'a> SdkHttpClient<'a> {
   }
 }
 
+#[cfg(not(target_family = "wasm"))]
+impl<'a> SdkBlockingHttpClient<'a> {
+  /// Creates a blocking request builder bound to a reqwest blocking client and SDK config.
+  pub fn new(client: &'a BlockingClient, config: &'a IndigaugeConfig) -> Self {
+    Self { client, config }
+  }
+
+  /// Sends a built blocking request and captures body, status, and headers.
+  pub fn send(&self, request: BlockingRequest) -> Result<SdkResponse, reqwest::Error> {
+    send_request_blocking(self.client, request)
+  }
+
+  fn json_request<T: Serialize>(
+    &self,
+    method: Method,
+    path: &str,
+    api_key: &str,
+    payload: &T,
+  ) -> Result<BlockingRequest, SdkBuildError> {
+    let request = self
+      .client
+      .request(method, self.config.api_url(path))
+      .timeout(self.config.request_timeout())
+      .header("Content-Type", "application/json")
+      .header("X-Indigauge-Key", api_key)
+      .json(payload)
+      .build()?;
+
+    Ok(request)
+  }
+
+  /// Builds a blocking request to start a session using the configured public key.
+  pub fn start_session(&self, payload: &StartSessionPayload<'_>) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "sessions/start", self.config.public_key(), payload)
+  }
+
+  /// Builds a blocking request to end an active session.
+  pub fn end_session(&self, session_token: &str, reason: &str) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "sessions/end", session_token, &json!({ "reason": reason }))
+  }
+
+  /// Builds a blocking heartbeat request for an active session.
+  pub fn heartbeat(&self, session_token: &str) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "sessions/heartbeat", session_token, &json!({}))
+  }
+
+  /// Builds a blocking event batch ingest request.
+  pub fn event_batch(
+    &self,
+    session_token: &str,
+    payload: &BatchEventPayload,
+  ) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "events/batch", session_token, payload)
+  }
+
+  /// Builds a blocking single event ingest request.
+  pub fn event(&self, session_token: &str, payload: &EventPayload) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "events", session_token, payload)
+  }
+
+  /// Builds a blocking metadata update request.
+  pub fn update_metadata<T: Serialize>(
+    &self,
+    session_token: &str,
+    metadata: &T,
+  ) -> Result<BlockingRequest, SdkBuildError> {
+    let value = serde_json::to_value(metadata)?;
+    self.update_metadata_value(session_token, &value)
+  }
+
+  /// Builds a blocking metadata update request from a pre-serialized JSON value.
+  pub fn update_metadata_value(&self, session_token: &str, metadata: &Value) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::PATCH, "sessions", session_token, metadata)
+  }
+
+  /// Builds a blocking feedback submission request.
+  pub fn feedback(&self, session_token: &str, payload: &FeedbackPayload<'_>) -> Result<BlockingRequest, SdkBuildError> {
+    self.json_request(Method::POST, "feedback", session_token, payload)
+  }
+
+  /// Builds a blocking screenshot upload request for an existing feedback record.
+  pub fn feedback_screenshot(
+    &self,
+    session_token: &str,
+    feedback_id: &str,
+    png_bytes: Vec<u8>,
+  ) -> Result<BlockingRequest, SdkBuildError> {
+    let path = format!("feedback/{}/screenshot", feedback_id);
+    let request = self
+      .client
+      .post(self.config.api_url(&path))
+      .timeout(self.config.request_timeout())
+      .header("Content-Type", "image/png")
+      .header("X-Indigauge-Key", session_token)
+      .body(png_bytes)
+      .build()?;
+
+    Ok(request)
+  }
+}
+
 /// Executes a request using the provided client and returns body + parts.
 pub async fn send_request(client: &Client, request: Request) -> Result<SdkResponse, reqwest::Error> {
   let response = client.execute(request).await?;
   let status = response.status();
   let headers = response.headers().clone();
   let body = response.bytes().await?;
+  Ok(SdkResponse { body, status, headers })
+}
+
+#[cfg(not(target_family = "wasm"))]
+/// Executes a blocking request using the provided client and returns body + parts.
+pub fn send_request_blocking(client: &BlockingClient, request: BlockingRequest) -> Result<SdkResponse, reqwest::Error> {
+  let response = client.execute(request)?;
+  let status = response.status();
+  let headers = response.headers().clone();
+  let body = response.bytes()?;
   Ok(SdkResponse { body, status, headers })
 }
 

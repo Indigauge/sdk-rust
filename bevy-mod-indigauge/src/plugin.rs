@@ -66,7 +66,7 @@ where
       public_key: std::env::var("INDIGAUGE_PUBLIC_KEY").unwrap_or_default(),
       game_version: env!("CARGO_PKG_VERSION").to_string(),
       log_level: BevyIndigaugeLogLevel(IndigaugeLogLevel::Info),
-      mode: BevyIndigaugeMode::default(),
+      mode: BevyIndigaugeMode(IndigaugeMode::Live),
       meta: PhantomData,
     }
   }

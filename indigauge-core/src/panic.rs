@@ -1,9 +1,60 @@
-use indigauge_types::prelude::{EventPayload, EventPayloadCtx, StartSessionResponse};
+use crate::runtime::IndigaugeBlockingRuntimeClient;
+use crate::state::drain_pending_events;
+use crate::types::BatchEventPayload;
+use indigauge_types::prelude::{EventPayload, EventPayloadCtx, IndigaugeConfig, StartSessionResponse};
 use serde_json::json;
 use std::time::Instant;
 
 /// Panic hook that ships a crash event and session end to the Indigauge backend.
 /// Caller decides whether to run it (e.g., not in dev mode) and provides the session start instant.
+pub fn panic_handler_with_config(
+  config: IndigaugeConfig,
+  session_api_key: String,
+  session_start: Instant,
+) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
+  let sdk_client = IndigaugeBlockingRuntimeClient::new(config);
+
+  move |info| {
+    if session_api_key == StartSessionResponse::dev().session_token {
+      return;
+    }
+
+    let pending_events = drain_pending_events()
+      .into_iter()
+      .map(|event| event.into_inner())
+      .collect::<Vec<_>>();
+
+    if !pending_events.is_empty() {
+      let payload = BatchEventPayload { events: pending_events };
+
+      if let Ok(request) = sdk_client.event_batch(&session_api_key, &payload) {
+        let _ = sdk_client.send(request);
+      }
+    }
+
+    let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
+
+    let metadata = info
+      .payload()
+      .downcast_ref::<&str>()
+      .map(|s| json!({"message": s.to_string()}));
+
+    let context = info.location().map(|loc| EventPayloadCtx {
+      file: loc.file().to_string(),
+      line: loc.line(),
+      module: None,
+    });
+
+    let _payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
+
+    if let Ok(request) = sdk_client.end_session(&session_api_key, "crashed") {
+      let _ = sdk_client.send(request);
+    }
+  }
+}
+
+/// Legacy panic hook constructor using explicit API origin.
+/// Prefer [`panic_handler_with_config`] when possible.
 pub fn panic_handler(
   host_origin: String,
   session_api_key: String,
@@ -41,7 +92,7 @@ pub fn panic_handler(
     let _ = client
       .post(&end_session_endpoint)
       .header("X-Indigauge-Key", &session_api_key)
-      .json(&json!({"reason": "panic"}))
+      .json(&json!({"reason": "crashed"}))
       .send();
   }
 }

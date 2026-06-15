@@ -7,6 +7,7 @@ Foundation crate for the Indigauge Rust SDK. It provides the shared building blo
 - Optional tracing layer that forwards tracing spans/events to Indigauge.
 - Optional panic handler that captures crashes as events (native targets).
 - Hardware helpers (CPU/RAM bucketing, CPU name coarsening) for lightweight device context.
+- Framework-agnostic runtime clients (`IndigaugeRuntimeClient` async + `IndigaugeBlockingRuntimeClient` native blocking).
 
 ## Quick start
 
@@ -29,6 +30,27 @@ fn main() {
 
 - `panic_handler` — capture panics as events (native targets only).
 - `tracing` — expose `IndigaugeLayer` and `IndigaugeSink` to ship tracing events.
+
+When `panic_handler` is enabled, the config-based panic hook also attempts to flush tracked pending events as a batch before sending the crash event and ending the session.
+
+## Framework-agnostic runtime usage
+
+Use `indigauge-core` directly when integrating with engines beyond Bevy (e.g. ggez, macroquad, Fyrox).
+
+```rust,no_run
+use indigauge_core::runtime::IndigaugeBlockingRuntimeClient;
+use indigauge_core::types::{EventPayload, IndigaugeConfig};
+
+let config = IndigaugeConfig::new("My Game", "PUBLIC_KEY", "1.0.0");
+let sdk = IndigaugeBlockingRuntimeClient::new(config);
+
+let event = EventPayload::new("game.start", "info", None, 0);
+let request = sdk.event("SESSION_TOKEN", &event)?;
+let _response = sdk.send(request)?;
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+If you build your own engine adapter, call `clear_pending_event_count` after draining/sending queued events so crash-time flush only includes unsent events.
 
 ## License
 
