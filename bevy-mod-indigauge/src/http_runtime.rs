@@ -14,6 +14,7 @@ pub use reqwest::header::HeaderMap;
 
 #[cfg(target_family = "wasm")]
 use crossbeam_channel::{Receiver, bounded};
+use serde::de::DeserializeOwned;
 
 #[cfg(not(target_family = "wasm"))]
 use {bevy::tasks::Task, futures_lite::future};
@@ -59,15 +60,17 @@ impl ReqwestPlugin {
 
       match result {
         Ok(response) => {
+          if let Ok(mut ec) = commands.get_entity(entity) {
+            ec.remove::<ReqwestInflight>();
+          }
           commands.trigger(ReqwestResponseEvent::new(entity, response.body, response.status, response.headers));
         },
         Err(error) => {
+          if let Ok(mut ec) = commands.get_entity(entity) {
+            ec.remove::<ReqwestInflight>();
+          }
           commands.trigger(ReqwestErrorEvent { entity, error });
         },
-      }
-
-      if let Ok(mut ec) = commands.get_entity(entity) {
-        ec.remove::<ReqwestInflight>();
       }
     }
   }
@@ -85,7 +88,7 @@ impl<'a> BevyReqwestBuilder<'a> {
   }
 
   pub fn on_json_response<
-    T: std::marker::Sync + std::marker::Send + serde::de::DeserializeOwned + 'static,
+    T: Sync + Send + DeserializeOwned + 'static,
     RB: Bundle,
     RM,
     OR: IntoObserverSystem<JsonResponse<T>, RB, RM>,
@@ -113,6 +116,11 @@ impl<'a> BevyReqwestBuilder<'a> {
 
   pub fn on_error<EB: Bundle, EM, OE: IntoObserverSystem<ReqwestErrorEvent, EB, EM>>(mut self, on_error: OE) -> Self {
     self.0.observe(on_error);
+    self
+  }
+
+  pub fn insert<B: Bundle>(mut self, bundle: B) -> Self {
+    self.0.insert(bundle);
     self
   }
 }
@@ -162,7 +170,13 @@ impl<'w, 's> BevyReqwest<'w, 's> {
     };
 
     #[cfg(not(target_family = "wasm"))]
-    let task = { pool.spawn(async move { async_compat::Compat::new(perform_request(client, request)).await }) };
+    let task = {
+      pool.spawn(async move {
+        use async_compat::Compat;
+
+        Compat::new(perform_request(client, request)).await
+      })
+    };
 
     ReqwestInflight::new(task)
   }
@@ -252,6 +266,11 @@ pub struct ReqwestErrorEvent {
 }
 
 impl ReqwestResponseEvent {
+  #[inline]
+  pub fn entity(&self) -> Entity {
+    self.entity
+  }
+
   #[inline]
   pub fn body(&self) -> &bytes::Bytes {
     &self.bytes

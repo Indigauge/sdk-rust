@@ -37,3 +37,7 @@ impl DerefMut for EventQueueReceiver {
 pub struct BufferedEvents {
   pub events: Vec<QueuedEvent>,
 }
+
+/// Resource flag set when the API rejects event ingestion with HTTP 429.
+#[derive(Resource, Default)]
+pub struct EventPostingDisabled(pub bool);
