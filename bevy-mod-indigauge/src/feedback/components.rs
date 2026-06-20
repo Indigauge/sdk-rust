@@ -100,3 +100,8 @@ pub struct HoldPressed;
 #[derive(Component)]
 /// Marker indicating a toggle-like component is active.
 pub struct Active;
+
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[derive(Component)]
+/// Marker for the error message text entity in the feedback form.
+pub struct ErrorText;
