@@ -84,7 +84,9 @@ fn main() {
       ..default()
     }))
     .insert_state(GameState::default())
-    .add_plugins(IndigaugePlugin::<Score>::new("ik.v1.eyJhbGciOiJIUzI1NiIsInR5cCI6IklLIiwidiI6MX0.eyJnaWQiOiJnYW1lXzI0Nmgzb28wcmF3dyIsImVpZCI6InVzZXJfMjN3b2g1cTU4MDc0IiwidGllciI6bnVsbCwiaXNfc3VwZXJ1c2VyIjpmYWxzZSwiZXhwIjoyNDEyNjk2Mzk0LCJzY29wZSI6ImluZ2VzdCIsImtpZCI6IjcyMjhiMDhmZmY1NmY1ODMwMCIsInRzIjoxNzgxOTc2Mzk0fQ.H_pHGtlAIaMMwUYnMqcl0Hj-fsCaTMj8s1IMeF8HbO8", "Breakout", env!("CARGO_PKG_VERSION")))
+    .add_plugins(
+      IndigaugePlugin::<Score>::new("API_KEY_VALUE", "Breakout", env!("CARGO_PKG_VERSION")).mode(IndigaugeMode::Dev),
+    )
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_message::<CollisionEvent>()

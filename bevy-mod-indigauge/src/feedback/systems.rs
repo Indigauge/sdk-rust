@@ -395,15 +395,7 @@ pub fn spawn_feedback_ui(
               });
           }
 
-          // Error message
-          child_panel.spawn((
-            Text::new(""),
-            TextFont::from_font_size(FontSize::Px(13.)),
-            TextColor(styles.error),
-            ErrorText,
-          ));
-
-          // Error message (hidden until form.error is set)
+          // Error message (empty until form.error is set)
           child_panel.spawn((
             Text::new(""),
             TextFont::from_font_size(FontSize::Px(13.)),
@@ -486,9 +478,6 @@ pub fn spawn_feedback_ui(
 
 /// Syncs `FeedbackFormState::error` to the error text entity in the panel.
 pub fn error_sync(form: Res<FeedbackFormState>, mut q: Query<&mut Text, With<ErrorText>>) {
-  if !form.is_changed() {
-    return;
-  }
   let Ok(mut text) = q.single_mut() else {
     return;
   };
