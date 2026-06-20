@@ -60,7 +60,7 @@ crossbeam-channel = "0.5"
 anyhow = "1"
 bytes = "1"
 futures-lite = "2"
-bevy_egui = { version = "0.39", optional = true }
+bevy_egui = { version = "0.40", optional = true }
 winit = { version = "0.30", features = ["x11"], optional = true }
 image = { version = "0.25", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
