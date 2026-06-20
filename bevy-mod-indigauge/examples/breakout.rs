@@ -84,7 +84,9 @@ fn main() {
       ..default()
     }))
     .insert_state(GameState::default())
-    .add_plugins(IndigaugePlugin::<Score>::new("YOUR_PUBLIC_KEY", "Breakout", env!("CARGO_PKG_VERSION")))
+    .add_plugins(
+      IndigaugePlugin::<Score>::new("API_KEY_VALUE", "Breakout", env!("CARGO_PKG_VERSION")).mode(IndigaugeMode::Dev),
+    )
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_message::<CollisionEvent>()
@@ -252,7 +254,7 @@ fn setup_game(
     commands.spawn((
       Text::new(txt),
       TextFont {
-        font_size: 18.,
+        font_size: FontSize::Px(18.),
         ..default()
       },
       TextColor(TEXT_COLOR),
@@ -270,7 +272,7 @@ fn setup_game(
     .spawn((
       Text::new("Score: "),
       TextFont {
-        font_size: SCOREBOARD_FONT_SIZE,
+        font_size: SCOREBOARD_FONT_SIZE.into(),
         ..default()
       },
       TextColor(TEXT_COLOR),
@@ -285,7 +287,7 @@ fn setup_game(
     .with_child((
       TextSpan::default(),
       TextFont {
-        font_size: SCOREBOARD_FONT_SIZE,
+        font_size: SCOREBOARD_FONT_SIZE.into(),
         ..default()
       },
       TextColor(SCORE_COLOR),

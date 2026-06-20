@@ -19,10 +19,10 @@ fn get_app() -> App {
       })
       .set(RenderPlugin {
         // Disable GPU backend
-        render_creation: RenderCreation::Automatic(WgpuSettings {
+        render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
           backends: None,
           ..default()
-        }),
+        })),
         ..default()
       })
       .disable::<bevy::winit::WinitPlugin>(),

@@ -20,6 +20,8 @@ use indigauge_core::types::{FeedbackPayload, IdResponse};
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use crate::feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText};
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+use bevy::text::EditableText;
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use indigauge_core::utils::select;
 
 /// Returns an observer that advances a state when feedback panel spawns.
@@ -107,12 +109,12 @@ pub fn observe_cancel_click(_trigger: On<Pointer<Click>>, mut commands: Commands
 pub fn observe_submit_click(
   _trigger: On<Pointer<Click>>,
   mut commands: Commands,
-  q_input: Query<&Text, With<MessageInput>>,
+  q_input: Query<&EditableText, With<MessageInput>>,
   mut form: ResMut<FeedbackFormState>,
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
 ) {
-  form.message = q_input.single().map(|s| s.to_string()).unwrap_or_default();
+  form.message = q_input.single().map(|s| s.value().to_string()).unwrap_or_default();
   let message = form.message.clone();
   submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
 }
@@ -149,10 +151,11 @@ pub(crate) fn submit_feedback(
       elapsed_ms,
       question: form.question.as_ref(),
     };
-
     ig.send_feedback(session_key, &payload, maybe_take_screenshot);
 
     commands.remove_resource::<FeedbackPanelProps>();
+  } else {
+    form.error = Some("Failed to submit feedback: session start time not found".to_string());
   }
 }
 

@@ -9,8 +9,8 @@ use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
   picking::hover::HoverMap,
   prelude::*,
+  text::{EditableText, TextCursorStyle},
 };
-use bevy_text_edit::TextEditable;
 use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
@@ -189,7 +189,11 @@ pub fn spawn_feedback_ui(
             child_panel
               .spawn((Text::default(), Node::default()))
               .with_children(|t| {
-                t.spawn((TextSpan::new(title), TextFont::from_font_size(22.), TextColor(styles.text_primary)));
+                t.spawn((
+                  TextSpan::new(title),
+                  TextFont::from_font_size(FontSize::Px(22.)),
+                  TextColor(styles.text_primary),
+                ));
               });
           }
 
@@ -200,7 +204,12 @@ pub fn spawn_feedback_ui(
             child_panel
               .spawn((Text::default(), Node::default()))
               .with_children(|t| {
-                t.spawn((Text::new(question), QuestionTextRoot, TextFont::from_font_size(size), TextColor(color)));
+                t.spawn((
+                  Text::new(question),
+                  QuestionTextRoot,
+                  TextFont::from_font_size(FontSize::Px(size)),
+                  TextColor(color),
+                ));
               });
           } else {
             // Category
@@ -230,12 +239,16 @@ pub fn spawn_feedback_ui(
                     button(styles.surface, styles.border),
                   ))
                   .with_children(|b| {
-                    b.spawn((Text::new("Category: "), TextFont::from_font_size(16.), TextColor(styles.text_primary)));
+                    b.spawn((
+                      Text::new("Category: "),
+                      TextFont::from_font_size(FontSize::Px(16.)),
+                      TextColor(styles.text_primary),
+                    ));
                     b.spawn((Text::default(), Node::default())).with_children(|t| {
                       t.spawn((
                         TextSpan::new(FeedbackCategory::General.label()),
                         CategoryButtonText,
-                        TextFont::from_font_size(16.),
+                        TextFont::from_font_size(FontSize::Px(16.)),
                         TextColor(styles.text_primary),
                       ));
                     });
@@ -285,7 +298,7 @@ pub fn spawn_feedback_ui(
                       b.spawn((Text::default(), Node::default())).with_children(|t| {
                         t.spawn((
                           TextSpan::new(cat.label()),
-                          TextFont::from_font_size(14.),
+                          TextFont::from_font_size(FontSize::Px(14.)),
                           TextColor(styles.text_primary),
                         ));
                       });
@@ -324,17 +337,16 @@ pub fn spawn_feedback_ui(
                       height: Val::Percent(100.0),
                       ..default()
                     },
-                    Interaction::default(),
                     Text::new(""),
-                    TextFont::from_font_size(16.),
+                    TextFont::from_font_size(FontSize::Px(16.)),
                     TextColor(styles.text_primary),
                     MessageInput,
-                    TextEditable {
-                      max_length: 1000,
-                      filter_in: vec!["[a-zA-Z0-9 .,;:!?()\"'-]".into(), " ".into()],
-                      placeholder: "Provide feedback message here".to_string(),
+                    EditableText {
+                      allow_newlines: true,
+                      max_characters: Some(1000),
                       ..Default::default()
                     },
+                    TextCursorStyle::default(),
                   ));
                 });
             });
@@ -367,14 +379,14 @@ pub fn spawn_feedback_ui(
                   .with_children(|b| {
                     b.spawn((
                       Text::new("Include screenshot: "),
-                      TextFont::from_font_size(14.),
+                      TextFont::from_font_size(FontSize::Px(14.)),
                       TextColor(styles.text_secondary),
                     ));
                     b.spawn((Text::default(), Node::default())).with_children(|t| {
                       t.spawn((
                         TextSpan::new("No"),
                         ScreenshotToggleText,
-                        TextFont::from_font_size(14.),
+                        TextFont::from_font_size(FontSize::Px(14.)),
                         TextColor(styles.secondary),
                       ));
                     });
@@ -382,6 +394,14 @@ pub fn spawn_feedback_ui(
                   .observe(observe_screenshot_toggle_click);
               });
           }
+
+          // Error message (empty until form.error is set)
+          child_panel.spawn((
+            Text::new(""),
+            TextFont::from_font_size(FontSize::Px(13.)),
+            TextColor(styles.error),
+            ErrorText,
+          ));
 
           // Submit and cancel buttons
           child_panel
@@ -411,7 +431,11 @@ pub fn spawn_feedback_ui(
                 ))
                 .with_children(|b| {
                   b.spawn((Text::default(), Node::default())).with_children(|t| {
-                    t.spawn((TextSpan::new("Cancel"), TextFont::from_font_size(16.), TextColor(styles.text_secondary)));
+                    t.spawn((
+                      TextSpan::new("Cancel"),
+                      TextFont::from_font_size(FontSize::Px(16.)),
+                      TextColor(styles.text_secondary),
+                    ));
                   });
                 })
                 .observe(observe_cancel_click);
@@ -441,7 +465,7 @@ pub fn spawn_feedback_ui(
                   b.spawn((Text::default(), Node::default())).with_children(|t| {
                     t.spawn((
                       TextSpan::new("Submit Feedback"),
-                      TextFont::from_font_size(16.),
+                      TextFont::from_font_size(FontSize::Px(16.)),
                       TextColor(styles.text_primary),
                     ));
                   });
@@ -450,4 +474,12 @@ pub fn spawn_feedback_ui(
             });
         });
     });
+}
+
+/// Syncs `FeedbackFormState::error` to the error text entity in the panel.
+pub fn error_sync(form: Res<FeedbackFormState>, mut q: Query<&mut Text, With<ErrorText>>) {
+  let Ok(mut text) = q.single_mut() else {
+    return;
+  };
+  **text = form.error.clone().unwrap_or_default();
 }
