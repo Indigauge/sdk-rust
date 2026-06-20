@@ -41,7 +41,7 @@ Add the Bevy plugin crate:
 ```toml
 [dependencies]
 bevy = "0.19"
-bevy-mod-indigauge = "0.6"
+bevy-mod-indigauge = "0.7"
 ```
 
 Minimal integration:
