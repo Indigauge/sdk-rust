@@ -64,10 +64,10 @@ mod tests {
           ..default()
         })
         .set(RenderPlugin {
-          render_creation: RenderCreation::Automatic(WgpuSettings {
+          render_creation: RenderCreation::Automatic(Box::new(WgpuSettings {
             backends: None,
             ..default()
-          }),
+          })),
           ..default()
         })
         .disable::<bevy::winit::WinitPlugin>(),
