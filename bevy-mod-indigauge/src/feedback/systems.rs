@@ -7,10 +7,13 @@ use crate::{
 };
 use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
+  input_focus::tab_navigation::TabIndex,
   picking::hover::HoverMap,
   prelude::*,
   text::{EditableText, TextCursorStyle},
+  window::SystemCursorIcon,
 };
+use bevy_feathers::cursor::EntityCursor;
 use bevy_feathers::display::label;
 use bevy_scene::prelude::*;
 use indigauge_core::utils::select;
@@ -401,6 +404,8 @@ pub fn spawn_feedback_ui(
         max_characters: Some(1000),
         ..Default::default()
       },
+      TabIndex(0),
+      EntityCursor::System(SystemCursorIcon::Text),
       TextCursorStyle::default(),
     ))
     .id();
