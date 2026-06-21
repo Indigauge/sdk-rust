@@ -138,3 +138,30 @@ jobs:
 
       - name: Build examples
         run: cargo build --examples
+
+  build_examples_wasm:
+    name: Build examples for wasm32
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install stable toolchain + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.96.0
+          targets: wasm32-unknown-unknown
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.toml', 'rust-toolchain*') }}
+
+      - name: Build examples for wasm
+        env:
+          RUSTC_WRAPPER: sccache
+        run: cargo build -p bevy-mod-indigauge --examples --target wasm32-unknown-unknown
