@@ -44,6 +44,7 @@ bevy-mod-indigauge = { version = "0.7", features = ["feedback_egui"] }
 
 - [`minimal`](examples/minimal.rs) - An example showing start session, sending info events and triggering feedback form.
 - [`breakout`](examples/breakout.rs) – An example showing a more realistic setup with a real game and game states.
+- [`flappy_bird`](examples/flappy_bird.rs) - A compact Flappy Bird clone showing gameplay events, score tracking, and feedback prompts.
 - [`feedback_egui`](examples/feedback_egui.rs) - A focused example showing the `bevy_egui` feedback panel triggers and props.
 
 ### Running Examples
@@ -57,6 +58,9 @@ cargo run --release --example breakout
 
 # Or with tracing feature:
 cargo run --release --example breakout --features tracing
+
+# Run the flappy bird demo
+cargo run --release --example flappy_bird
 
 # Run the bevy_egui feedback demo (optional feature)
 cargo run --release --example feedback_egui --features feedback_egui

@@ -89,6 +89,11 @@ path = "examples/breakout.rs"
 required-features = ["default"]
 
 [[example]]
+name = "flappy_bird"
+path = "examples/flappy_bird.rs"
+required-features = ["default"]
+
+[[example]]
 name = "feedback_egui"
 path = "examples/feedback_egui.rs"
 required-features = ["feedback_egui"]
