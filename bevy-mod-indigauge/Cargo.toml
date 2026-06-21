@@ -1,6 +1,6 @@
 [package]
 name = "bevy-mod-indigauge"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Understand your users. Grow your game. Track events, session health, and user sentiment with zero fuss"
@@ -68,7 +68,7 @@ image = { version = "0.25", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 bevy_scene = { version = "0.19" }
 
-indigauge-core = { path = "../indigauge-core", version = "0.6.0", default-features = false }
+indigauge-core = { path = "../indigauge-core", version = "0.7.1", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 async-compat = "0.2"
