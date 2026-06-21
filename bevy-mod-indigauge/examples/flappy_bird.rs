@@ -2,6 +2,7 @@ use std::env;
 
 use bevy::prelude::*;
 use bevy_mod_indigauge::prelude::*;
+use serde::Serialize;
 
 const WORLD_LEFT: f32 = -460.0;
 const WORLD_RIGHT: f32 = 460.0;
@@ -38,7 +39,9 @@ impl EventType {
 enum GameState {
   #[default]
   InitializeSession,
+  Setup,
   Playing,
+  Paused,
   GameOver,
 }
 
@@ -73,6 +76,11 @@ struct PipeSequence {
   index: usize,
 }
 
+#[derive(Resource, Deref, DerefMut, Default, Serialize)]
+pub struct FlappySessionMetadata {
+  pub score: u32,
+}
+
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
@@ -81,15 +89,20 @@ fn main() {
     .insert_resource(Score::default())
     .insert_resource(SpawnTimer(Timer::from_seconds(PIPE_SPAWN_SECONDS, TimerMode::Repeating)))
     .insert_resource(PipeSequence::default())
+    .insert_resource(FlappySessionMetadata::default())
     .add_plugins(
-      IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "Flappy Bird", env!("CARGO_PKG_VERSION"))
+      IndigaugePlugin::<FlappySessionMetadata>::new("YOUR_PUBLIC_KEY", "Flappy Bird", env!("CARGO_PKG_VERSION"))
         .mode(IndigaugeMode::Dev)
         .log_level(IndigaugeLogLevel::Info),
     )
     .add_systems(Startup, setup)
     .add_systems(OnEnter(GameState::InitializeSession), start_default_session)
-    .add_observer(switch_state_after_session_init(GameState::Playing))
-    .add_systems(OnEnter(GameState::Playing), reset_round)
+    .add_observer(switch_state_after_session_init(GameState::Setup))
+    // Switch to paused state when feedback is spawned
+    .add_observer(switch_state_on_feedback_spawn(GameState::Paused))
+    // Switch back to playing state when feedback is despawned
+    .add_observer(switch_state_on_feedback_despawn(GameState::Playing))
+    .add_systems(Update, reset_round.run_if(in_state(GameState::Setup)))
     .add_systems(OnEnter(GameState::GameOver), spawn_game_over_text)
     .add_systems(
       Update,
@@ -138,17 +151,16 @@ fn setup(mut commands: Commands) {
     ))
     .with_child((TextSpan::new("0"), TextColor(TEXT_COLOR)));
 
-  commands
-    .spawn((
-      Text::new("SPACE flap | R restart | F2 default feedback | F3 bug report"),
-      TextColor(TEXT_COLOR),
-      Node {
-        position_type: PositionType::Absolute,
-        left: Val::Px(14.0),
-        bottom: Val::Px(12.0),
-        ..default()
-      },
-    ));
+  commands.spawn((
+    Text::new("SPACE flap | R restart | F2 default feedback | F3 bug report"),
+    TextColor(TEXT_COLOR),
+    Node {
+      position_type: PositionType::Absolute,
+      left: Val::Px(14.0),
+      bottom: Val::Px(12.0),
+      ..default()
+    },
+  ));
 }
 
 fn reset_round(
@@ -160,6 +172,7 @@ fn reset_round(
   pipes: Query<Entity, With<Pipe>>,
   triggers: Query<Entity, With<ScoreTrigger>>,
   game_over_texts: Query<Entity, With<GameOverText>>,
+  mut next_state: ResMut<NextState<GameState>>,
 ) {
   for entity in &pipes {
     commands.entity(entity).despawn();
@@ -182,12 +195,10 @@ fn reset_round(
   **velocity = 0.0;
 
   ig_info!(EventType::ROUND_START);
+  next_state.set(GameState::Playing);
 }
 
-fn flap_input(
-  keys: Res<ButtonInput<KeyCode>>,
-  bird_query: Single<(&Transform, &mut BirdVelocity), With<Bird>>,
-) {
+fn flap_input(keys: Res<ButtonInput<KeyCode>>, bird_query: Single<(&Transform, &mut BirdVelocity), With<Bird>>) {
   if keys.just_pressed(KeyCode::Space) {
     let (bird_transform, mut velocity) = bird_query.into_inner();
     **velocity = FLAP_IMPULSE;
@@ -201,10 +212,7 @@ fn apply_gravity(bird_query: Single<(&mut Transform, &mut BirdVelocity), With<Bi
   bird_transform.translation.y += **velocity * time.delta_secs();
 }
 
-fn move_obstacles(
-  mut obstacles: Query<&mut Transform, Or<(With<Pipe>, With<ScoreTrigger>)>>,
-  time: Res<Time>,
-) {
+fn move_obstacles(mut obstacles: Query<&mut Transform, Or<(With<Pipe>, With<ScoreTrigger>)>>, time: Res<Time>) {
   let delta = PIPE_SPEED * time.delta_secs();
   for mut transform in &mut obstacles {
     transform.translation.x -= delta;
@@ -252,21 +260,19 @@ fn spawn_pipes(
     ));
   }
 
-  commands.spawn((
-    Transform::from_translation(Vec3::new(x, gap_center, 0.0)),
-    ScoreTrigger { passed: false },
-  ));
+  commands.spawn((Transform::from_translation(Vec3::new(x, gap_center, 0.0)), ScoreTrigger { passed: false }));
 }
 
 fn score_pipes(
   mut score: ResMut<Score>,
+  mut metadata: ResMut<FlappySessionMetadata>,
   mut triggers: Query<(&Transform, &mut ScoreTrigger)>,
 ) {
   for (transform, mut trigger) in &mut triggers {
     if !trigger.passed && transform.translation.x < BIRD_X {
       trigger.passed = true;
       **score += 1;
-      ig_info!(EventType::SCORE_INCREASE, { "score": **score });
+      metadata.score = **score;
     }
   }
 }
@@ -280,7 +286,7 @@ fn detect_collisions(
   let bird_half = BIRD_SIZE * 0.5;
 
   if bird.y + bird_half.y >= WORLD_TOP || bird.y - bird_half.y <= WORLD_BOTTOM {
-    ig_error!(EventType::PLAYER_CRASH, { "reason": "out_of_bounds", "bird_y": bird.y });
+    ig_info!(EventType::PLAYER_CRASH, { "reason": "out_of_bounds", "bird_y": bird.y });
     next_state.set(GameState::GameOver);
     return;
   }
@@ -293,7 +299,7 @@ fn detect_collisions(
     let overlaps_y = (bird.y - pipe_center.y).abs() < bird_half.y + pipe_half.y;
 
     if overlaps_x && overlaps_y {
-      ig_error!(EventType::PLAYER_CRASH, { "reason": "hit_pipe", "bird_y": bird.y });
+      ig_info!(EventType::PLAYER_CRASH, { "reason": "hit_pipe", "bird_y": bird.y });
       next_state.set(GameState::GameOver);
       return;
     }
@@ -324,7 +330,7 @@ fn spawn_game_over_text(mut commands: Commands, score: Res<Score>) {
 
 fn restart_after_game_over(keys: Res<ButtonInput<KeyCode>>, mut next_state: ResMut<NextState<GameState>>) {
   if keys.just_pressed(KeyCode::KeyR) {
-    next_state.set(GameState::Playing);
+    next_state.set(GameState::Setup);
   }
 }
 
