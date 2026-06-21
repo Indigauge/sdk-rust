@@ -52,7 +52,9 @@ bevy = { version = "0.19", default-features = false, features = [
   "sysinfo_plugin",
   "bevy_state",
   "bevy_render",
-  "bevy_log"
+  "bevy_log",
+  "bevy_ui_widgets",
+  "scene"
 ]}
 serde.workspace = true
 serde_json.workspace = true
