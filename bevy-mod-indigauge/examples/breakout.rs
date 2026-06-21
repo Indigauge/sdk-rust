@@ -9,8 +9,8 @@ use bevy::{
   prelude::*,
 };
 use bevy_feathers::dark_theme::create_dark_theme;
-use bevy_feathers::theme::{ThemeProps, UiTheme};
-use bevy_feathers::{FeathersPlugins, display::label};
+use bevy_feathers::display::label;
+use bevy_feathers::theme::UiTheme;
 use bevy_mod_indigauge::prelude::*;
 use serde::Serialize;
 
