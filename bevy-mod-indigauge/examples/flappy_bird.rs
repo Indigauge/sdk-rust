@@ -162,6 +162,7 @@ fn setup(mut commands: Commands) {
   ));
 }
 
+#[allow(clippy::too_many_arguments)]
 fn reset_round(
   mut commands: Commands,
   mut score: ResMut<Score>,
@@ -211,17 +212,16 @@ fn apply_gravity(bird_query: Single<(&mut Transform, &mut BirdVelocity), With<Bi
   bird_transform.translation.y += **velocity * time.delta_secs();
 }
 
-fn move_obstacles(mut obstacles: Query<&mut Transform, Or<(With<Pipe>, With<ScoreTrigger>)>>, time: Res<Time>) {
+type MoveObstaclesQuery<'w, 's> = Query<'w, 's, &'static mut Transform, Or<(With<Pipe>, With<ScoreTrigger>)>>;
+fn move_obstacles(mut obstacles: MoveObstaclesQuery, time: Res<Time>) {
   let delta = PIPE_SPEED * time.delta_secs();
   for mut transform in &mut obstacles {
     transform.translation.x -= delta;
   }
 }
 
-fn despawn_offscreen_obstacles(
-  mut commands: Commands,
-  obstacles: Query<(Entity, &Transform), Or<(With<Pipe>, With<ScoreTrigger>)>>,
-) {
+type DespawnQuery<'w, 's> = Query<'w, 's, (Entity, &'static Transform), Or<(With<Pipe>, With<ScoreTrigger>)>>;
+fn despawn_offscreen_obstacles(mut commands: Commands, obstacles: DespawnQuery) {
   for (entity, transform) in &obstacles {
     if transform.translation.x < WORLD_LEFT - PIPE_WIDTH {
       commands.entity(entity).despawn();
