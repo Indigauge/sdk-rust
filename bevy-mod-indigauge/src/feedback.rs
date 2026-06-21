@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+use bevy_feathers::FeathersPlugins;
 
 use crate::{feedback::resources::*, session::resources::SessionApiKey};
 
@@ -24,20 +26,23 @@ impl Plugin for FeedbackUiPlugin {
       .init_resource::<FeedbackPanelStyles>();
 
     #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-    app.insert_resource(FeedbackUiState::default()).add_systems(
-      Update,
-      (
-        systems::spawn_feedback_ui.run_if(resource_exists_and_changed::<FeedbackPanelProps>),
-        systems::despawn_feedback_panel.run_if(resource_removed::<FeedbackPanelProps>),
-        systems::toggle_panel_visibility_with_key.run_if(resource_exists::<FeedbackKeyCodeToggle>),
-        systems::panel_visibility_sync.run_if(resource_exists_and_changed::<FeedbackPanelProps>),
-        systems::dropdown_visibility_sync.run_if(resource_exists_and_changed::<FeedbackUiState>),
-        systems::update_scroll_position,
-        systems::handle_hover_and_click_styles,
-        systems::error_sync.run_if(resource_exists::<FeedbackPanelProps>),
-      )
-        .run_if(resource_exists::<SessionApiKey>),
-    );
+    app
+      .add_plugins(FeathersPlugins)
+      .insert_resource(FeedbackUiState::default())
+      .add_systems(
+        Update,
+        (
+          systems::spawn_feedback_ui.run_if(resource_exists_and_changed::<FeedbackPanelProps>),
+          systems::despawn_feedback_panel.run_if(resource_removed::<FeedbackPanelProps>),
+          systems::toggle_panel_visibility_with_key.run_if(resource_exists::<FeedbackKeyCodeToggle>),
+          systems::panel_visibility_sync.run_if(resource_exists_and_changed::<FeedbackPanelProps>),
+          systems::dropdown_visibility_sync.run_if(resource_exists_and_changed::<FeedbackUiState>),
+          systems::update_scroll_position,
+          systems::handle_hover_and_click_styles,
+          systems::error_sync.run_if(resource_exists::<FeedbackPanelProps>),
+        )
+          .run_if(resource_exists::<SessionApiKey>),
+      );
 
     #[cfg(feature = "feedback_egui")]
     {
