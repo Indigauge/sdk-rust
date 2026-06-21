@@ -1,9 +1,9 @@
 use bevy::ecs::observer::On;
 use bevy::ecs::system::{Res, ResMut, SystemParam};
 use bevy::log::{error, info};
-use indigauge_core::http::{
-  ResponseDisposition, get_or_init_player_id, response_disposition_for_level, should_log_transport_error,
-};
+use indigauge_core::http::{ResponseDisposition, response_disposition_for_level, should_log_transport_error};
+#[cfg(not(target_family = "wasm"))]
+use indigauge_core::http::get_or_init_player_id;
 use indigauge_core::runtime::IndigaugeRuntimeClient;
 use indigauge_core::state::clear_pending_event_count;
 use indigauge_core::types::BatchEventPayload;
