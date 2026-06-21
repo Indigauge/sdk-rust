@@ -1,12 +1,19 @@
+#[cfg(not(target_family = "wasm"))]
 use crate::runtime::IndigaugeBlockingRuntimeClient;
+#[cfg(not(target_family = "wasm"))]
 use crate::state::drain_pending_events;
+#[cfg(not(target_family = "wasm"))]
 use crate::types::BatchEventPayload;
-use indigauge_types::prelude::{EventPayload, EventPayloadCtx, IndigaugeConfig, StartSessionResponse};
+use indigauge_types::prelude::IndigaugeConfig;
+#[cfg(not(target_family = "wasm"))]
+use indigauge_types::prelude::{EventPayload, EventPayloadCtx, StartSessionResponse};
+#[cfg(not(target_family = "wasm"))]
 use serde_json::json;
 use std::time::Instant;
 
 /// Panic hook that ships a crash event and session end to the Indigauge backend.
 /// Caller decides whether to run it (e.g., not in dev mode) and provides the session start instant.
+#[cfg(not(target_family = "wasm"))]
 pub fn panic_handler_with_config(
   config: IndigaugeConfig,
   session_api_key: String,
@@ -53,8 +60,19 @@ pub fn panic_handler_with_config(
   }
 }
 
+#[cfg(target_family = "wasm")]
+pub fn panic_handler_with_config(
+  config: IndigaugeConfig,
+  session_api_key: String,
+  session_start: Instant,
+) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
+  let _ = (config, session_api_key, session_start);
+  move |_info| {}
+}
+
 /// Legacy panic hook constructor using explicit API origin.
 /// Prefer [`panic_handler_with_config`] when possible.
+#[cfg(not(target_family = "wasm"))]
 pub fn panic_handler(
   host_origin: String,
   session_api_key: String,
@@ -95,4 +113,14 @@ pub fn panic_handler(
       .json(&json!({"reason": "crashed"}))
       .send();
   }
+}
+
+#[cfg(target_family = "wasm")]
+pub fn panic_handler(
+  host_origin: String,
+  session_api_key: String,
+  session_start: Instant,
+) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
+  let _ = (host_origin, session_api_key, session_start);
+  move |_info| {}
 }
