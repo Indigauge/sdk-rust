@@ -30,7 +30,6 @@ struct EventType;
 
 impl EventType {
   const PLAYER_FLAP: &'static str = "player.flap";
-  const SCORE_INCREASE: &'static str = "score.increase";
   const PLAYER_CRASH: &'static str = "player.crash";
   const ROUND_START: &'static str = "round.start";
 }
