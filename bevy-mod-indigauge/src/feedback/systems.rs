@@ -11,6 +11,7 @@ use bevy::{
   prelude::*,
   text::{EditableText, TextCursorStyle},
 };
+use bevy_scene::prelude::*;
 use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
@@ -153,327 +154,318 @@ pub fn spawn_feedback_ui(
     form.question = Some(question.clone());
   }
 
-  // Root overlay
-  commands
-    .spawn((
+  let root_entity = commands
+    .spawn_scene(bsn! {
       Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
-        align_items: props.spawn_position.align_items(),
-        justify_content: props.spawn_position.justify_content(),
-        ..default()
-      },
-      BackgroundColor(Color::NONE),
-      FeedbackPanel,
-    ))
-    .with_children(|root| {
-      // Panel/card
-      root
+        align_items: {props.spawn_position.align_items()},
+        justify_content: {props.spawn_position.justify_content()},
+      }
+      BackgroundColor(Color::NONE)
+    })
+    .id();
+  commands.entity(root_entity).insert(FeedbackPanel);
+
+  let panel_entity = commands
+    .spawn_scene(bsn! {
+      ChildOf(root_entity)
+      Node {
+        width: Val::Px(420.0),
+        min_height: Val::Px(420.0),
+        margin: {props.position_margin},
+        padding: UiRect::axes(Val::Px(48.0), Val::Px(32.0)),
+        border: UiRect::all(Val::Px(2.0)),
+        flex_direction: FlexDirection::Column,
+        row_gap: Val::Px(10.0),
+        border_radius: BorderRadius::all(Val::Px(8.0)),
+      }
+    })
+    .id();
+  commands
+    .entity(panel_entity)
+    .insert(panel(styles.background, styles.border));
+
+  commands.entity(panel_entity).with_children(|child_panel| {
+    // Title
+    if let Some(title) = &props.title {
+      child_panel
+        .spawn((Text::default(), Node::default()))
+        .with_children(|t| {
+          t.spawn((TextSpan::new(title), TextFont::from_font_size(FontSize::Px(22.)), TextColor(styles.text_primary)));
+        });
+    }
+
+    if let Some(question) = &props.question {
+      let size = select(18., 22., props.title.is_some());
+      let color = select(styles.text_secondary, styles.text_primary, props.title.is_some());
+
+      child_panel
+        .spawn((Text::default(), Node::default()))
+        .with_children(|t| {
+          t.spawn((
+            Text::new(question),
+            QuestionTextRoot,
+            TextFont::from_font_size(FontSize::Px(size)),
+            TextColor(color),
+          ));
+        });
+    } else {
+      // Category
+      child_panel
         .spawn((
           Node {
-            width: Val::Px(420.0),
-            min_height: Val::Px(420.0),
-            margin: props.position_margin,
-            padding: UiRect::axes(Val::Px(48.0), Val::Px(32.0)),
-            border: UiRect::all(Val::Px(2.0)),
-            flex_direction: FlexDirection::Column,
-            row_gap: Val::Px(10.0),
-            border_radius: BorderRadius::all(Val::Px(8.0)),
+            width: Val::Percent(100.0),
+            height: Val::Auto,
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
             ..default()
           },
-          panel(styles.background, styles.border),
+          BackgroundColor(Color::NONE),
         ))
-        .with_children(|child_panel| {
-          // Title
-          if let Some(title) = &props.title {
-            child_panel
-              .spawn((Text::default(), Node::default()))
-              .with_children(|t| {
-                t.spawn((
-                  TextSpan::new(title),
-                  TextFont::from_font_size(FontSize::Px(22.)),
-                  TextColor(styles.text_primary),
-                ));
-              });
-          }
-
-          if let Some(question) = &props.question {
-            let size = select(18., 22., props.title.is_some());
-            let color = select(styles.text_secondary, styles.text_primary, props.title.is_some());
-
-            child_panel
-              .spawn((Text::default(), Node::default()))
-              .with_children(|t| {
-                t.spawn((
-                  Text::new(question),
-                  QuestionTextRoot,
-                  TextFont::from_font_size(FontSize::Px(size)),
-                  TextColor(color),
-                ));
-              });
-          } else {
-            // Category
-            child_panel
-              .spawn((
-                Node {
-                  width: Val::Percent(100.0),
-                  height: Val::Auto,
-                  justify_content: JustifyContent::SpaceBetween,
-                  align_items: AlignItems::Center,
-                  ..default()
-                },
-                BackgroundColor(Color::NONE),
-              ))
-              .with_children(|row| {
-                // Category button
-                row
-                  .spawn((
-                    Node {
-                      width: Val::Percent(100.0),
-                      border: UiRect::all(Val::Px(3.0)),
-                      padding: UiRect::axes(Val::Px(10.0), Val::Px(6.0)),
-                      border_radius: BorderRadius::all(Val::Px(8.0)),
-                      ..default()
-                    },
-                    CategoryButton,
-                    button(styles.surface, styles.border),
-                  ))
-                  .with_children(|b| {
-                    b.spawn((
-                      Text::new("Category: "),
-                      TextFont::from_font_size(FontSize::Px(16.)),
-                      TextColor(styles.text_primary),
-                    ));
-                    b.spawn((Text::default(), Node::default())).with_children(|t| {
-                      t.spawn((
-                        TextSpan::new(FeedbackCategory::General.label()),
-                        CategoryButtonText,
-                        TextFont::from_font_size(FontSize::Px(16.)),
-                        TextColor(styles.text_primary),
-                      ));
-                    });
-                  })
-                  .observe(observe_category_dropdown_click);
-              });
-
-            // Dropdown-list (hidden as default)
-            child_panel
-              .spawn((
-                Node {
-                  width: Val::Px(318.0),
-                  flex_direction: FlexDirection::Row,
-                  flex_wrap: FlexWrap::Wrap,
-                  justify_content: JustifyContent::SpaceBetween,
-                  row_gap: Val::Px(4.0),
-                  padding: UiRect::all(Val::Px(8.0)),
-                  border: UiRect::all(Val::Px(1.0)),
-                  display: Display::None,
-                  position_type: PositionType::Absolute,
-                  top: Val::Px(110.0),
-                  left: Val::Px(49.0),
-                  border_radius: BorderRadius::bottom(Val::Px(8.)),
-                  ..default()
-                },
-                BackgroundColor(styles.background),
-                BorderColor::all(styles.border),
-                ZIndex(10),
-                CategoryList,
-              ))
-              .with_children(|list| {
-                for cat in FeedbackCategory::ALL {
-                  list
-                    .spawn((
-                      Node {
-                        width: Val::Percent(48.0),
-                        border: UiRect::all(Val::Px(1.0)),
-                        padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
-                        justify_content: JustifyContent::Center,
-                        border_radius: BorderRadius::all(Val::Px(8.0)),
-                        ..default()
-                      },
-                      CategoryItem(*cat),
-                      button(styles.surface, styles.border),
-                    ))
-                    .with_children(|b| {
-                      b.spawn((Text::default(), Node::default())).with_children(|t| {
-                        t.spawn((
-                          TextSpan::new(cat.label()),
-                          TextFont::from_font_size(FontSize::Px(14.)),
-                          TextColor(styles.text_primary),
-                        ));
-                      });
-                    })
-                    .observe(observe_category_item_click);
-                }
-              });
-          }
-
-          // Text-input area
-          child_panel
-            .spawn((Node {
-              width: Val::Percent(100.0),
-              min_height: Val::Px(180.0),
-              border_radius: BorderRadius::all(Val::Px(8.0)),
-              ..default()
-            },))
-            .with_children(|area| {
-              area
-                .spawn((
-                  Node {
-                    width: Val::Percent(100.0),
-                    border: UiRect::all(Val::Px(2.0)),
-                    overflow: Overflow::scroll_y(),
-                    padding: UiRect::all(Val::Px(10.0)),
-                    border_radius: BorderRadius::all(Val::Px(8.0)),
-                    ..default()
-                  },
-                  MessageInputRoot,
-                  panel(styles.surface, styles.border),
-                ))
-                .with_children(|field| {
-                  field.spawn((
-                    Node {
-                      width: Val::Percent(100.0),
-                      height: Val::Percent(100.0),
-                      ..default()
-                    },
-                    Text::new(""),
-                    TextFont::from_font_size(FontSize::Px(16.)),
-                    TextColor(styles.text_primary),
-                    MessageInput,
-                    EditableText {
-                      allow_newlines: true,
-                      max_characters: Some(1000),
-                      ..Default::default()
-                    },
-                    TextCursorStyle::default(),
-                  ));
-                });
-            });
-
-          if props.allow_screenshot {
-            // Screenshot toggle
-            child_panel
-              .spawn((
-                Node {
-                  width: Val::Percent(100.0),
-                  justify_content: JustifyContent::SpaceBetween,
-                  align_items: AlignItems::Center,
-                  ..default()
-                },
-                BackgroundColor(Color::NONE),
-              ))
-              .with_children(|row| {
-                // Screenshot toggle
-                row
-                  .spawn((
-                    Node {
-                      border: UiRect::all(Val::Px(2.0)),
-                      padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
-                      border_radius: BorderRadius::all(Val::Px(8.0)),
-                      ..default()
-                    },
-                    ScreenshotToggle,
-                    button(styles.surface, styles.border),
-                  ))
-                  .with_children(|b| {
-                    b.spawn((
-                      Text::new("Include screenshot: "),
-                      TextFont::from_font_size(FontSize::Px(14.)),
-                      TextColor(styles.text_secondary),
-                    ));
-                    b.spawn((Text::default(), Node::default())).with_children(|t| {
-                      t.spawn((
-                        TextSpan::new("No"),
-                        ScreenshotToggleText,
-                        TextFont::from_font_size(FontSize::Px(14.)),
-                        TextColor(styles.secondary),
-                      ));
-                    });
-                  })
-                  .observe(observe_screenshot_toggle_click);
-              });
-          }
-
-          // Error message (empty until form.error is set)
-          child_panel.spawn((
-            Text::new(""),
-            TextFont::from_font_size(FontSize::Px(13.)),
-            TextColor(styles.error),
-            ErrorText,
-          ));
-
-          // Submit and cancel buttons
-          child_panel
+        .with_children(|row| {
+          // Category button
+          row
             .spawn((
               Node {
                 width: Val::Percent(100.0),
-                justify_content: JustifyContent::SpaceAround,
-                align_items: AlignItems::Center,
-                column_gap: Val::Px(8.0),
-                margin: UiRect::top(Val::Px(15.)),
+                border: UiRect::all(Val::Px(3.0)),
+                padding: UiRect::axes(Val::Px(10.0), Val::Px(6.0)),
+                border_radius: BorderRadius::all(Val::Px(8.0)),
                 ..default()
               },
-              BackgroundColor(Color::NONE),
+              CategoryButton,
+              button(styles.surface, styles.border),
             ))
-            .with_children(|row| {
-              // Cancel
-              row
-                .spawn((
-                  Node {
-                    border: UiRect::all(Val::Px(2.0)),
-                    padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
-                    border_radius: BorderRadius::all(Val::Px(8.0)),
-                    ..default()
-                  },
-                  CancelButton,
-                  button(styles.surface, styles.border),
-                ))
-                .with_children(|b| {
-                  b.spawn((Text::default(), Node::default())).with_children(|t| {
-                    t.spawn((
-                      TextSpan::new("Cancel"),
-                      TextFont::from_font_size(FontSize::Px(16.)),
-                      TextColor(styles.text_secondary),
-                    ));
-                  });
-                })
-                .observe(observe_cancel_click);
-
-              // Submit
-              row
-                .spawn((
-                  Button,
-                  Node {
-                    border: UiRect::all(Val::Px(2.0)),
-                    padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
-                    border_radius: BorderRadius::all(Val::Px(8.0)),
-                    ..default()
-                  },
-                  SubmitButton,
-                  ButtonHoverStyle {
-                    background: styles.primary_hover,
-                    border: styles.border.with_alpha(0.5),
-                  },
-                  ButtonPressedStyle {
-                    background: styles.primary_hover.with_alpha(0.5),
-                    border: styles.border.with_alpha(0.2),
-                  },
-                  panel(styles.primary, styles.primary_hover),
-                ))
-                .with_children(|b| {
-                  b.spawn((Text::default(), Node::default())).with_children(|t| {
-                    t.spawn((
-                      TextSpan::new("Submit Feedback"),
-                      TextFont::from_font_size(FontSize::Px(16.)),
-                      TextColor(styles.text_primary),
-                    ));
-                  });
-                })
-                .observe(observe_submit_click);
-            });
+            .with_children(|b| {
+              b.spawn((
+                Text::new("Category: "),
+                TextFont::from_font_size(FontSize::Px(16.)),
+                TextColor(styles.text_primary),
+              ));
+              b.spawn((Text::default(), Node::default())).with_children(|t| {
+                t.spawn((
+                  TextSpan::new(FeedbackCategory::General.label()),
+                  CategoryButtonText,
+                  TextFont::from_font_size(FontSize::Px(16.)),
+                  TextColor(styles.text_primary),
+                ));
+              });
+            })
+            .observe(observe_category_dropdown_click);
         });
-    });
+
+      // Dropdown-list (hidden as default)
+      child_panel
+        .spawn((
+          Node {
+            width: Val::Px(318.0),
+            flex_direction: FlexDirection::Row,
+            flex_wrap: FlexWrap::Wrap,
+            justify_content: JustifyContent::SpaceBetween,
+            row_gap: Val::Px(4.0),
+            padding: UiRect::all(Val::Px(8.0)),
+            border: UiRect::all(Val::Px(1.0)),
+            display: Display::None,
+            position_type: PositionType::Absolute,
+            top: Val::Px(110.0),
+            left: Val::Px(49.0),
+            border_radius: BorderRadius::bottom(Val::Px(8.)),
+            ..default()
+          },
+          BackgroundColor(styles.background),
+          BorderColor::all(styles.border),
+          ZIndex(10),
+          CategoryList,
+        ))
+        .with_children(|list| {
+          for cat in FeedbackCategory::ALL {
+            list
+              .spawn((
+                Node {
+                  width: Val::Percent(48.0),
+                  border: UiRect::all(Val::Px(1.0)),
+                  padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
+                  justify_content: JustifyContent::Center,
+                  border_radius: BorderRadius::all(Val::Px(8.0)),
+                  ..default()
+                },
+                CategoryItem(*cat),
+                button(styles.surface, styles.border),
+              ))
+              .with_children(|b| {
+                b.spawn((Text::default(), Node::default())).with_children(|t| {
+                  t.spawn((
+                    TextSpan::new(cat.label()),
+                    TextFont::from_font_size(FontSize::Px(14.)),
+                    TextColor(styles.text_primary),
+                  ));
+                });
+              })
+              .observe(observe_category_item_click);
+          }
+        });
+    }
+
+    // Text-input area
+    child_panel
+      .spawn((Node {
+        width: Val::Percent(100.0),
+        min_height: Val::Px(180.0),
+        border_radius: BorderRadius::all(Val::Px(8.0)),
+        ..default()
+      },))
+      .with_children(|area| {
+        area
+          .spawn((
+            Node {
+              width: Val::Percent(100.0),
+              border: UiRect::all(Val::Px(2.0)),
+              overflow: Overflow::scroll_y(),
+              padding: UiRect::all(Val::Px(10.0)),
+              border_radius: BorderRadius::all(Val::Px(8.0)),
+              ..default()
+            },
+            MessageInputRoot,
+            panel(styles.surface, styles.border),
+          ))
+          .with_children(|field| {
+            field.spawn((
+              Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                ..default()
+              },
+              Text::new(""),
+              TextFont::from_font_size(FontSize::Px(16.)),
+              TextColor(styles.text_primary),
+              MessageInput,
+              EditableText {
+                allow_newlines: true,
+                max_characters: Some(1000),
+                ..Default::default()
+              },
+              TextCursorStyle::default(),
+            ));
+          });
+      });
+
+    if props.allow_screenshot {
+      // Screenshot toggle
+      child_panel
+        .spawn((
+          Node {
+            width: Val::Percent(100.0),
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            ..default()
+          },
+          BackgroundColor(Color::NONE),
+        ))
+        .with_children(|row| {
+          row
+            .spawn((
+              Node {
+                border: UiRect::all(Val::Px(2.0)),
+                padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
+                border_radius: BorderRadius::all(Val::Px(8.0)),
+                ..default()
+              },
+              ScreenshotToggle,
+              button(styles.surface, styles.border),
+            ))
+            .with_children(|b| {
+              b.spawn((
+                Text::new("Include screenshot: "),
+                TextFont::from_font_size(FontSize::Px(14.)),
+                TextColor(styles.text_secondary),
+              ));
+              b.spawn((Text::default(), Node::default())).with_children(|t| {
+                t.spawn((
+                  TextSpan::new("No"),
+                  ScreenshotToggleText,
+                  TextFont::from_font_size(FontSize::Px(14.)),
+                  TextColor(styles.secondary),
+                ));
+              });
+            })
+            .observe(observe_screenshot_toggle_click);
+        });
+    }
+
+    // Error message (empty until form.error is set)
+    child_panel.spawn((Text::new(""), TextFont::from_font_size(FontSize::Px(13.)), TextColor(styles.error), ErrorText));
+
+    // Submit and cancel buttons
+    child_panel
+      .spawn((
+        Node {
+          width: Val::Percent(100.0),
+          justify_content: JustifyContent::SpaceAround,
+          align_items: AlignItems::Center,
+          column_gap: Val::Px(8.0),
+          margin: UiRect::top(Val::Px(15.)),
+          ..default()
+        },
+        BackgroundColor(Color::NONE),
+      ))
+      .with_children(|row| {
+        // Cancel
+        row
+          .spawn((
+            Node {
+              border: UiRect::all(Val::Px(2.0)),
+              padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+              border_radius: BorderRadius::all(Val::Px(8.0)),
+              ..default()
+            },
+            CancelButton,
+            button(styles.surface, styles.border),
+          ))
+          .with_children(|b| {
+            b.spawn((Text::default(), Node::default())).with_children(|t| {
+              t.spawn((
+                TextSpan::new("Cancel"),
+                TextFont::from_font_size(FontSize::Px(16.)),
+                TextColor(styles.text_secondary),
+              ));
+            });
+          })
+          .observe(observe_cancel_click);
+
+        // Submit
+        row
+          .spawn((
+            Button,
+            Node {
+              border: UiRect::all(Val::Px(2.0)),
+              padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+              border_radius: BorderRadius::all(Val::Px(8.0)),
+              ..default()
+            },
+            SubmitButton,
+            ButtonHoverStyle {
+              background: styles.primary_hover,
+              border: styles.border.with_alpha(0.5),
+            },
+            ButtonPressedStyle {
+              background: styles.primary_hover.with_alpha(0.5),
+              border: styles.border.with_alpha(0.2),
+            },
+            panel(styles.primary, styles.primary_hover),
+          ))
+          .with_children(|b| {
+            b.spawn((Text::default(), Node::default())).with_children(|t| {
+              t.spawn((
+                TextSpan::new("Submit Feedback"),
+                TextFont::from_font_size(FontSize::Px(16.)),
+                TextColor(styles.text_primary),
+              ));
+            });
+          })
+          .observe(observe_submit_click);
+      });
+  });
 }
 
 /// Syncs `FeedbackFormState::error` to the error text entity in the panel.

@@ -33,6 +33,7 @@ feedback = [
   "bevy/bevy_ui_widgets",
   "bevy/bevy_picking",
   "bevy/ui_picking",
+  "dep:bevy_feathers",
   "dep:image"
 ]
 feedback_egui = [
@@ -61,9 +62,11 @@ anyhow = "1"
 bytes = "1"
 futures-lite = "2"
 bevy_egui = { version = "0.40", optional = true }
+bevy_feathers = { version = "0.19", optional = true }
 winit = { version = "0.30", features = ["x11"], optional = true }
 image = { version = "0.25", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+bevy_scene = { version = "0.19" }
 
 indigauge-core = { path = "../indigauge-core", version = "0.6.0", default-features = false }
 

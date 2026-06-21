@@ -8,6 +8,9 @@ use bevy::{
   math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
   prelude::*,
 };
+use bevy_feathers::dark_theme::create_dark_theme;
+use bevy_feathers::theme::{ThemeProps, UiTheme};
+use bevy_feathers::{FeathersPlugins, display::label};
 use bevy_mod_indigauge::prelude::*;
 use serde::Serialize;
 
@@ -41,7 +44,6 @@ const GAP_BETWEEN_BRICKS: f32 = 5.0;
 const GAP_BETWEEN_BRICKS_AND_CEILING: f32 = 20.0;
 const GAP_BETWEEN_BRICKS_AND_SIDES: f32 = 20.0;
 
-const SCOREBOARD_FONT_SIZE: f32 = 33.0;
 const SCOREBOARD_TEXT_PADDING: Val = Val::Px(5.0);
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.9, 0.9, 0.9);
@@ -87,6 +89,7 @@ fn main() {
     .add_plugins(
       IndigaugePlugin::<Score>::new("API_KEY_VALUE", "Breakout", env!("CARGO_PKG_VERSION")).mode(IndigaugeMode::Dev),
     )
+    .insert_resource(UiTheme(create_dark_theme()))
     .insert_resource(Score::default())
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_message::<CollisionEvent>()
@@ -203,7 +206,7 @@ struct Score {
   score: usize,
 }
 
-#[derive(Component)]
+#[derive(Component, Default, Clone)]
 struct ScoreboardUi;
 
 fn setup_camera(mut commands: Commands) {
@@ -251,47 +254,33 @@ fn setup_game(
   ]
   .into_iter()
   .for_each(|(txt, margin)| {
-    commands.spawn((
-      Text::new(txt),
-      TextFont {
-        font_size: FontSize::Px(18.),
-        ..default()
-      },
-      TextColor(TEXT_COLOR),
+    commands.spawn_scene(bsn! {
       Node {
         position_type: PositionType::Absolute,
         bottom: margin,
         left: SCOREBOARD_TEXT_PADDING,
-        ..default()
-      },
-    ));
+      }
+      Children [
+        (label(txt)),
+      ]
+    });
   });
 
   // Scoreboard
-  commands
-    .spawn((
-      Text::new("Score: "),
-      TextFont {
-        font_size: SCOREBOARD_FONT_SIZE.into(),
-        ..default()
-      },
-      TextColor(TEXT_COLOR),
-      ScoreboardUi,
-      Node {
-        position_type: PositionType::Absolute,
-        top: SCOREBOARD_TEXT_PADDING,
-        left: SCOREBOARD_TEXT_PADDING,
-        ..default()
-      },
-    ))
-    .with_child((
-      TextSpan::default(),
-      TextFont {
-        font_size: SCOREBOARD_FONT_SIZE.into(),
-        ..default()
-      },
-      TextColor(SCORE_COLOR),
-    ));
+  commands.spawn_scene(bsn! {
+    Node {
+      position_type: PositionType::Absolute,
+      top: SCOREBOARD_TEXT_PADDING,
+      left: SCOREBOARD_TEXT_PADDING,
+    }
+    ScoreboardUi
+    Text("Score: ")
+    TextColor(TEXT_COLOR)
+    Children [(
+      TextSpan::new("")
+      TextColor(SCORE_COLOR)
+    )]
+  });
 
   // Walls
   commands.spawn(WallBundle::new(WallLocation::Left));

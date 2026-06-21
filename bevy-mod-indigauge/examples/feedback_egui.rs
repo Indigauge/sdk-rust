@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_feathers::{FeathersPlugins, display::label};
 use bevy_mod_indigauge::prelude::{
   EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeLogLevel, IndigaugeMode,
   IndigaugePlugin, StartSessionEvent,
@@ -7,6 +8,7 @@ use bevy_mod_indigauge::prelude::{
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
+    .add_plugins(FeathersPlugins)
     .add_plugins(
       IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "Feedback Egui Example", env!("CARGO_PKG_VERSION"))
         .mode(IndigaugeMode::Dev)
@@ -22,28 +24,26 @@ fn setup(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
   commands.trigger(StartSessionEvent::new());
 
-  commands
-    .spawn(Node {
+  commands.spawn_scene(bsn! {
+    Node {
       width: Val::Percent(100.0),
       height: Val::Percent(100.0),
       justify_content: JustifyContent::Center,
       align_items: AlignItems::Center,
-      ..default()
-    })
-    .with_children(|root| {
-      root
-        .spawn(Node {
-          flex_direction: FlexDirection::Column,
-          row_gap: Val::Px(8.0),
-          ..default()
-        })
-        .with_children(|column| {
-          column.spawn(Text::new("bevy_egui feedback panel example"));
-          column.spawn(Text::new("Press F2 for default panel"));
-          column.spawn(Text::new("Press F3 for a bug report question panel"));
-          column.spawn(Text::new("Press SPACE for a gameplay question panel"));
-        });
-    });
+    }
+    Children [(
+      Node {
+        flex_direction: FlexDirection::Column,
+        row_gap: Val::Px(8.0),
+      }
+      Children [
+        (label("bevy_egui feedback panel example")),
+        (label("Press F2 for default panel")),
+        (label("Press F3 for a bug report question panel")),
+        (label("Press SPACE for a gameplay question panel")),
+      ]
+    )]
+  });
 }
 
 fn trigger_bug_report_feedback(

@@ -1,6 +1,7 @@
 use std::{env, time::Duration};
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy_feathers::{FeathersPlugins, display::label};
 use bevy_mod_indigauge::prelude::{
   EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeLogLevel, IndigaugeMode,
   IndigaugePlugin, StartSessionEvent, ig_info,
@@ -15,6 +16,7 @@ impl EventType {
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
+    .add_plugins(FeathersPlugins)
     .add_plugins(
       IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "My minimal game", env!("CARGO_PKG_VERSION"))
         // Optional: Set mode (Defaults to live). Dev mode is useful for testing and debugging and does not send events to the server.
@@ -50,16 +52,16 @@ fn setup(mut commands: Commands) {
   const HELP_TEXT_DEFAULT: &str = "Press 'F2' to display the default feedback panel!\n";
   const HELP_TEXT_WITH_QUESTION: &str = "Press 'SPACE' to display the feedback panel with a question!\n";
 
-  commands
-    .spawn(Node {
+  commands.spawn_scene(bsn! {
+    Node {
       flex_direction: FlexDirection::Column,
       row_gap: Val::Px(8.0),
-      ..default()
-    })
-    .with_children(|builder| {
-      builder.spawn(Text::new(HELP_TEXT_DEFAULT));
-      builder.spawn(Text::new(HELP_TEXT_WITH_QUESTION));
-    });
+    }
+    Children [
+      (label(HELP_TEXT_DEFAULT)),
+      (label(HELP_TEXT_WITH_QUESTION)),
+    ]
+  });
 }
 
 fn trigger_feedback_with_question(
