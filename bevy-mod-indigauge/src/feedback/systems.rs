@@ -15,7 +15,6 @@ use bevy::{
 };
 use bevy_feathers::cursor::EntityCursor;
 use bevy_feathers::display::label;
-use bevy_scene::CommandsSceneExt;
 use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
