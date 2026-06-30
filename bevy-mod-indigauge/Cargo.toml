@@ -38,10 +38,7 @@ feedback = [
 ]
 feedback_egui = [
   "feedback",
-  "bevy_egui",
-  "winit",
-  "winit/x11",
-  "winit/wayland",
+  "bevy_egui"
 ]
 
 [dependencies]
@@ -62,9 +59,8 @@ crossbeam-channel = "0.5"
 anyhow = "1"
 bytes = "1"
 futures-lite = "2"
-bevy_egui = { version = "0.40", optional = true }
+bevy_egui = { version = "0.41", optional = true }
 bevy_feathers = { version = "0.19", optional = true }
-winit = { version = "0.30", features = ["x11"], optional = true }
 image = { version = "0.25", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
@@ -80,6 +76,7 @@ getrandom = { version = "0.4", features = ["wasm_js"] }
 [dev-dependencies]
 bevy = { version = "0.19" }
 tracing = { version = "0.1" }
+winit = { version = "0.30", features = ["x11"] }
 
 [[example]]
 name = "minimal"
