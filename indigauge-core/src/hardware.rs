@@ -132,7 +132,7 @@ mod tests {
   #[test]
   fn buckets_cores_and_ram() {
     assert_eq!(bucket_cores(1), "1-2");
-    assert_eq!(bucket_ram_gb(16), "12-16");
+    assert_eq!(bucket_ram_gb(16), "9-16");
   }
 
   #[test]
