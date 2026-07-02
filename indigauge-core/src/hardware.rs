@@ -3,7 +3,7 @@ pub fn bucket_cores(n: u32) -> &'static str {
   match n {
     0..=2 => "1-2",
     3..=4 => "3-4",
-    5..=8 => "6-8",
+    5..=8 => "5-8",
     _ => ">8",
   }
 }
@@ -12,8 +12,8 @@ pub fn bucket_cores(n: u32) -> &'static str {
 pub fn bucket_ram_gb(gb: u32) -> &'static str {
   match gb {
     0..=4 => "<=4",
-    5..=8 => "6-8",
-    9..=16 => "12-16",
+    5..=8 => "5-8",
+    9..=16 => "9-16",
     _ => ">16",
   }
 }
