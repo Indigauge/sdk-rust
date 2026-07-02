@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
-use bevy_text_edit::TextEditPluginAnyState;
+use crate::text_edit::TextEditPluginAnyState;
 
 use crate::{feedback::resources::*, session::resources::SessionApiKey};
 

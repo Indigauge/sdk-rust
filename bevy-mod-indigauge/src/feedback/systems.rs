@@ -1,16 +1,21 @@
 use crate::{
-  feedback::observers::{
-    observe_cancel_click, observe_category_dropdown_click, observe_category_item_click,
-    observe_screenshot_toggle_click, observe_submit_click,
+  feedback::{
+    components::*,
+    helpers::*,
+    observers::{
+      observe_cancel_click, observe_category_dropdown_click, observe_category_item_click,
+      observe_screenshot_toggle_click, observe_submit_click,
+    },
+    resources::*,
+    types::FeedbackCategory,
   },
-  feedback::{components::*, helpers::*, resources::*, types::FeedbackCategory},
+  text_edit::TextEditable,
 };
 use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
   picking::hover::HoverMap,
   prelude::*,
 };
-use bevy_text_edit::TextEditable;
 use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
