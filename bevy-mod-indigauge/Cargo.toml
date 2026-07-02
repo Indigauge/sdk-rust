@@ -33,7 +33,6 @@ feedback = [
   "bevy/bevy_picking", 
   "bevy/ui_picking", 
   "dep:image", 
-  "dep:bevy_text_edit"
 ]
 feedback_egui = [
   "feedback",
@@ -64,7 +63,7 @@ bevy_egui = { version = "0.39", optional = true }
 winit = { version = "0.30", features = ["x11"], optional = true }
 image = { version = "0.25", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-bevy_text_edit = { version ="0.8.0", path = "patches/bevy_text_edit", optional = true }
+bevy_text_edit = { path = "patches/bevy_text_edit" }
 
 indigauge-core = { path = "../indigauge-core", version = "0.6.0", default-features = false }
 
