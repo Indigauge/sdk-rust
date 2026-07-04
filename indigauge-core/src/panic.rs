@@ -1,15 +1,16 @@
 #[cfg(not(target_family = "wasm"))]
 use crate::runtime::IndigaugeBlockingRuntimeClient;
-#[cfg(not(target_family = "wasm"))]
+#[cfg(target_family = "wasm")]
+use crate::runtime::IndigaugeRuntimeClient;
+
 use crate::state::drain_pending_events;
-#[cfg(not(target_family = "wasm"))]
 use crate::types::BatchEventPayload;
 use indigauge_types::prelude::IndigaugeConfig;
-#[cfg(not(target_family = "wasm"))]
 use indigauge_types::prelude::{DEV_SESSION_TOKEN, EventPayload, EventPayloadCtx};
-#[cfg(not(target_family = "wasm"))]
 use serde_json::json;
 use std::time::Instant;
+#[cfg(target_family = "wasm")]
+use wasm_bindgen_futures::spawn_local;
 
 /// Panic hook that ships a crash event and session end to the Indigauge backend.
 /// Caller decides whether to run it (e.g., not in dev mode) and provides the session start instant.
@@ -66,6 +67,54 @@ pub fn panic_handler_with_config(
   session_api_key: String,
   session_start: Instant,
 ) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
-  let _ = (config, session_api_key, session_start);
-  move |_info| {}
+  let sdk_client = IndigaugeRuntimeClient::new(config);
+
+  move |info| {
+    if session_api_key == DEV_SESSION_TOKEN {
+      return;
+    }
+
+    let pending_events = drain_pending_events()
+      .into_iter()
+      .map(|event| event.into_inner())
+      .collect::<Vec<_>>();
+
+    let batch_request = if pending_events.is_empty() {
+      None
+    } else {
+      let payload = BatchEventPayload { events: pending_events };
+      sdk_client.event_batch(&session_api_key, &payload).ok()
+    };
+
+    let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
+
+    let metadata = info
+      .payload()
+      .downcast_ref::<&str>()
+      .map(|s| json!({"message": s.to_string()}));
+
+    let context = info.location().map(|loc| EventPayloadCtx {
+      file: loc.file().to_string(),
+      line: loc.line(),
+      module: None,
+    });
+
+    let _payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
+    let end_request = sdk_client.end_session(&session_api_key, "crashed").ok();
+
+    if batch_request.is_none() && end_request.is_none() {
+      return;
+    }
+
+    let client = sdk_client.client().clone();
+    spawn_local(async move {
+      if let Some(request) = batch_request {
+        let _ = client.execute(request).await;
+      }
+
+      if let Some(request) = end_request {
+        let _ = client.execute(request).await;
+      }
+    });
+  }
 }

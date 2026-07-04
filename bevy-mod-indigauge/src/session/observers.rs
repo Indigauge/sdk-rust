@@ -181,7 +181,7 @@ fn start_session(
 
   let key = response.session_token.clone();
 
-  #[cfg(all(feature = "panic_handler", not(target_family = "wasm")))]
+  #[cfg(feature = "panic_handler")]
   {
     use crate::session::utils::panic_handler;
 
