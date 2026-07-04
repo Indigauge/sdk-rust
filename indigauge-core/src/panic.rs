@@ -8,9 +8,39 @@ use crate::types::BatchEventPayload;
 use indigauge_types::prelude::IndigaugeConfig;
 use indigauge_types::prelude::{DEV_SESSION_TOKEN, EventPayload, EventPayloadCtx};
 use serde_json::json;
+use std::panic::PanicHookInfo;
 use std::time::Instant;
 #[cfg(target_family = "wasm")]
 use wasm_bindgen_futures::spawn_local;
+
+fn send_pending_events_payload(info: &PanicHookInfo<'_>, session_start: Instant) -> BatchEventPayload {
+  let mut pending_events = drain_pending_events()
+    .into_iter()
+    .map(|event| event.into_inner())
+    .collect::<Vec<_>>();
+
+  let last_event_payload = end_session_payload(info, session_start);
+  pending_events.push(last_event_payload);
+
+  BatchEventPayload { events: pending_events }
+}
+
+fn end_session_payload(info: &PanicHookInfo<'_>, session_start: Instant) -> EventPayload {
+  let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
+
+  let metadata = info
+    .payload()
+    .downcast_ref::<&str>()
+    .map(|s| json!({"message": s.to_string()}));
+
+  let context = info.location().map(|loc| EventPayloadCtx {
+    file: loc.file().to_string(),
+    line: loc.line(),
+    module: None,
+  });
+
+  EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context)
+}
 
 /// Panic hook that ships a crash event and session end to the Indigauge backend.
 /// Caller decides whether to run it (e.g., not in dev mode) and provides the session start instant.
@@ -27,33 +57,10 @@ pub fn panic_handler_with_config(
       return;
     }
 
-    let pending_events = drain_pending_events()
-      .into_iter()
-      .map(|event| event.into_inner())
-      .collect::<Vec<_>>();
-
-    if !pending_events.is_empty() {
-      let payload = BatchEventPayload { events: pending_events };
-
-      if let Ok(request) = sdk_client.event_batch(&session_api_key, &payload) {
-        let _ = sdk_client.send(request);
-      }
+    let payload = send_pending_events_payload(info, session_start);
+    if let Ok(request) = sdk_client.event_batch(&session_api_key, &payload) {
+      let _ = sdk_client.send(request);
     }
-
-    let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
-
-    let metadata = info
-      .payload()
-      .downcast_ref::<&str>()
-      .map(|s| json!({"message": s.to_string()}));
-
-    let context = info.location().map(|loc| EventPayloadCtx {
-      file: loc.file().to_string(),
-      line: loc.line(),
-      module: None,
-    });
-
-    let _payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
 
     if let Ok(request) = sdk_client.end_session(&session_api_key, "crashed") {
       let _ = sdk_client.send(request);
@@ -74,32 +81,8 @@ pub fn panic_handler_with_config(
       return;
     }
 
-    let pending_events = drain_pending_events()
-      .into_iter()
-      .map(|event| event.into_inner())
-      .collect::<Vec<_>>();
-
-    let batch_request = if pending_events.is_empty() {
-      None
-    } else {
-      let payload = BatchEventPayload { events: pending_events };
-      sdk_client.event_batch(&session_api_key, &payload).ok()
-    };
-
-    let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
-
-    let metadata = info
-      .payload()
-      .downcast_ref::<&str>()
-      .map(|s| json!({"message": s.to_string()}));
-
-    let context = info.location().map(|loc| EventPayloadCtx {
-      file: loc.file().to_string(),
-      line: loc.line(),
-      module: None,
-    });
-
-    let _payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
+    let payload = send_pending_events_payload(info, session_start);
+    let batch_request = sdk_client.event_batch(&session_api_key, &payload).ok();
     let end_request = sdk_client.end_session(&session_api_key, "crashed").ok();
 
     if batch_request.is_none() && end_request.is_none() {
