@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub const DEV_SESSION_TOKEN: &str = "dev";
+
 /// Payload sent when creating a new analytics session.
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -26,7 +28,7 @@ impl StartSessionResponse {
   /// Returns a deterministic development-mode session response.
   pub fn dev() -> Self {
     Self {
-      session_token: "dev".to_string(),
+      session_token: DEV_SESSION_TOKEN.to_string(),
     }
   }
 }

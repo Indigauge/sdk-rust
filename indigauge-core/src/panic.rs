@@ -6,7 +6,7 @@ use crate::state::drain_pending_events;
 use crate::types::BatchEventPayload;
 use indigauge_types::prelude::IndigaugeConfig;
 #[cfg(not(target_family = "wasm"))]
-use indigauge_types::prelude::{EventPayload, EventPayloadCtx, StartSessionResponse};
+use indigauge_types::prelude::{DEV_SESSION_TOKEN, EventPayload, EventPayloadCtx};
 #[cfg(not(target_family = "wasm"))]
 use serde_json::json;
 use std::time::Instant;
@@ -22,7 +22,7 @@ pub fn panic_handler_with_config(
   let sdk_client = IndigaugeBlockingRuntimeClient::new(config);
 
   move |info| {
-    if session_api_key == StartSessionResponse::dev().session_token {
+    if session_api_key == DEV_SESSION_TOKEN {
       return;
     }
 
@@ -67,60 +67,5 @@ pub fn panic_handler_with_config(
   session_start: Instant,
 ) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
   let _ = (config, session_api_key, session_start);
-  move |_info| {}
-}
-
-/// Legacy panic hook constructor using explicit API origin.
-/// Prefer [`panic_handler_with_config`] when possible.
-#[cfg(not(target_family = "wasm"))]
-pub fn panic_handler(
-  host_origin: String,
-  session_api_key: String,
-  session_start: Instant,
-) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
-  move |info| {
-    if session_api_key == StartSessionResponse::dev().session_token {
-      return;
-    }
-
-    let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
-
-    let metadata = info
-      .payload()
-      .downcast_ref::<&str>()
-      .map(|s| json!({"message": s.to_string()}));
-
-    let context = info.location().map(|loc| EventPayloadCtx {
-      file: loc.file().to_string(),
-      line: loc.line(),
-      module: None,
-    });
-
-    let payload = EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context);
-
-    let single_event_endpoint = format!("{}/v1/events", host_origin);
-    let client = reqwest::blocking::Client::new();
-    let _ = client
-      .post(&single_event_endpoint)
-      .header("X-Indigauge-Key", &session_api_key)
-      .json(&payload)
-      .send();
-
-    let end_session_endpoint = format!("{}/v1/sessions/end", host_origin);
-    let _ = client
-      .post(&end_session_endpoint)
-      .header("X-Indigauge-Key", &session_api_key)
-      .json(&json!({"reason": "crashed"}))
-      .send();
-  }
-}
-
-#[cfg(target_family = "wasm")]
-pub fn panic_handler(
-  host_origin: String,
-  session_api_key: String,
-  session_start: Instant,
-) -> impl Fn(&std::panic::PanicHookInfo) + Send + Sync + 'static {
-  let _ = (host_origin, session_api_key, session_start);
   move |_info| {}
 }
