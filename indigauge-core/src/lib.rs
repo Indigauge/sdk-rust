@@ -34,7 +34,7 @@ pub mod prelude {
   pub use crate::{enqueue_ig_event, ig_debug, ig_error, ig_event, ig_info, ig_trace, ig_warn};
 
   #[cfg(feature = "panic_handler")]
-  pub use crate::panic::{panic_handler, panic_handler_with_config};
+  pub use crate::panic::panic_handler_with_config;
 
   #[cfg(feature = "tracing")]
   pub use crate::tracing::{IndigaugeLayer, IndigaugeSink};

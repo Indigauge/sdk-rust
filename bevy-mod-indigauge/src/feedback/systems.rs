@@ -18,6 +18,7 @@ use bevy_feathers::display::label;
 use indigauge_core::utils::select;
 
 const LINE_HEIGHT: f32 = 21.;
+
 /// Despawns the active feedback panel UI tree.
 pub fn despawn_feedback_panel(mut commands: Commands, query: Query<Entity, With<FeedbackPanel>>) {
   for entity in &query {
