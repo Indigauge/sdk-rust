@@ -2,19 +2,19 @@ use bevy::prelude::*;
 
 use crate::consent::{
   resources::IndigaugeConsentState,
-  systems::{load_persisted_consent, persist_consent_choice},
+  systems::{emit_consent_selected_event, load_persisted_consent, persist_consent_choice},
 };
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 use crate::consent::{
   resources::ConsentModalStyles,
   systems::{
-    consent_modal_visibility_sync, despawn_consent_modal_ui, observe_accept_consent_click,
-    observe_decline_consent_click, spawn_consent_modal_ui,
+    consent_modal_visibility_sync, despawn_consent_modal_ui, dismiss_modal_if_choice_known,
+    observe_accept_consent_click, observe_decline_consent_click, spawn_consent_modal_ui,
   },
 };
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 pub mod components;
 pub mod events;
 pub mod resources;
@@ -29,9 +29,18 @@ impl Plugin for ConsentPlugin {
     app
       .init_resource::<IndigaugeConsentState>()
       .add_systems(Startup, load_persisted_consent)
-      .add_systems(Update, persist_consent_choice.run_if(resource_changed::<IndigaugeConsentState>));
+      .add_systems(
+        Update,
+        (
+          persist_consent_choice,
+          emit_consent_selected_event,
+          #[cfg(feature = "consent")]
+          dismiss_modal_if_choice_known,
+        )
+          .run_if(resource_changed::<IndigaugeConsentState>),
+      );
 
-    #[cfg(feature = "feedback")]
+    #[cfg(feature = "consent")]
     app.init_resource::<ConsentModalStyles>().add_systems(
       Update,
       (

@@ -56,7 +56,7 @@ impl IndigaugeConsentState {
 }
 
 /// Screen placement options for spawning the consent modal.
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 #[derive(Default, Debug, Clone, Copy)]
 pub enum ConsentModalSpawnPosition {
   TopLeft,
@@ -71,7 +71,7 @@ pub enum ConsentModalSpawnPosition {
   CenterRight,
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 impl ConsentModalSpawnPosition {
   pub(crate) fn align_items(&self) -> AlignItems {
     match self {
@@ -99,7 +99,7 @@ impl ConsentModalSpawnPosition {
 }
 
 /// Style palette used by the consent modal.
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 #[derive(Resource, Debug)]
 pub struct ConsentModalStyles {
   pub overlay: Color,
@@ -113,7 +113,7 @@ pub struct ConsentModalStyles {
   pub decline_button_hover: Color,
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 impl Default for ConsentModalStyles {
   fn default() -> Self {
     Self {
@@ -131,7 +131,7 @@ impl Default for ConsentModalStyles {
 }
 
 /// Controls how and when the telemetry consent modal is shown.
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 #[derive(Resource, Debug)]
 pub struct ConsentModalProps {
   pub title: String,
@@ -144,7 +144,7 @@ pub struct ConsentModalProps {
   pub position_margin: UiRect,
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 impl Default for ConsentModalProps {
   fn default() -> Self {
     Self {
@@ -160,7 +160,7 @@ impl Default for ConsentModalProps {
   }
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 impl ConsentModalProps {
   /// Creates consent modal props with SDK defaults.
   pub fn new() -> Self {

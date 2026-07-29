@@ -19,6 +19,7 @@ all-features = true
 [features]
 default = [
   "panic_handler", 
+  "consent",
   "feedback"
 ]
 panic_handler = [
@@ -27,6 +28,12 @@ panic_handler = [
 tracing = [
   "dep:tracing-subscriber", 
   "indigauge-core/tracing"
+]
+consent = [
+  "bevy/bevy_ui",
+  "bevy/bevy_ui_widgets",
+  "bevy/bevy_picking",
+  "bevy/ui_picking"
 ]
 feedback = [
   "bevy/bevy_ui",

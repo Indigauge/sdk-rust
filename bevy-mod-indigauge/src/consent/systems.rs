@@ -12,13 +12,13 @@ use crate::{
   },
 };
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 use crate::consent::{
   components::{AcceptConsentButton, ConsentModal, DeclineConsentButton},
   resources::{ConsentModalProps, ConsentModalStyles},
 };
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 type AcceptConsentInteractionQuery<'w, 's> = Query<
   'w,
   's,
@@ -26,7 +26,7 @@ type AcceptConsentInteractionQuery<'w, 's> = Query<
   (With<AcceptConsentButton>, Changed<Interaction>),
 >;
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 type DeclineConsentInteractionQuery<'w, 's> = Query<
   'w,
   's,
@@ -79,7 +79,27 @@ pub fn persist_consent_choice(config: Res<BevyIndigaugeConfig>, consent_state: R
   }
 }
 
-#[cfg(feature = "feedback")]
+/// Emits a consent-selected event whenever the consent state transitions to a known choice.
+pub fn emit_consent_selected_event(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  match consent_state.choice {
+    IndigaugeConsentChoice::Accepted | IndigaugeConsentChoice::Declined => {
+      commands.trigger(IndigaugeConsentSelectedEvent {
+        choice: consent_state.choice,
+      });
+    },
+    IndigaugeConsentChoice::Unknown => {},
+  }
+}
+
+#[cfg(feature = "consent")]
+/// Ensures modal props are removed when consent was already decided previously.
+pub fn dismiss_modal_if_choice_known(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  if consent_state.choice != IndigaugeConsentChoice::Unknown {
+    commands.remove_resource::<ConsentModalProps>();
+  }
+}
+
+#[cfg(feature = "consent")]
 /// Spawns or respawns the consent modal UI hierarchy.
 pub fn spawn_consent_modal_ui(
   mut commands: Commands,
@@ -195,7 +215,7 @@ pub fn spawn_consent_modal_ui(
   ));
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 /// Despawns the active consent modal UI tree.
 pub fn despawn_consent_modal_ui(mut commands: Commands, query: Query<Entity, With<ConsentModal>>) {
   for entity in &query {
@@ -203,7 +223,7 @@ pub fn despawn_consent_modal_ui(mut commands: Commands, query: Query<Entity, Wit
   }
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 /// Synchronizes modal display with the `visible` flag in props.
 pub fn consent_modal_visibility_sync(props: Res<ConsentModalProps>, mut query: Query<&mut Node, With<ConsentModal>>) {
   if let Ok(mut root_node) = query.single_mut() {
@@ -211,7 +231,7 @@ pub fn consent_modal_visibility_sync(props: Res<ConsentModalProps>, mut query: Q
   }
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 /// Handles accept button interactions and writes consent state.
 pub fn observe_accept_consent_click(
   mut commands: Commands,
@@ -227,16 +247,13 @@ pub fn observe_accept_consent_click(
       Interaction::Pressed => {
         consent_state.choice = IndigaugeConsentChoice::Accepted;
         consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
-        commands.trigger(IndigaugeConsentSelectedEvent {
-          choice: IndigaugeConsentChoice::Accepted,
-        });
         commands.remove_resource::<ConsentModalProps>();
       },
     }
   }
 }
 
-#[cfg(feature = "feedback")]
+#[cfg(feature = "consent")]
 /// Handles decline button interactions and writes consent state.
 pub fn observe_decline_consent_click(
   mut commands: Commands,
@@ -252,9 +269,6 @@ pub fn observe_decline_consent_click(
       Interaction::Pressed => {
         consent_state.choice = IndigaugeConsentChoice::Declined;
         consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
-        commands.trigger(IndigaugeConsentSelectedEvent {
-          choice: IndigaugeConsentChoice::Declined,
-        });
         commands.remove_resource::<ConsentModalProps>();
       },
     }

@@ -27,13 +27,14 @@ bevy = "0.19"
 bevy-mod-indigauge = { version = "0.7" }
 ```
 
-### Feedback backend features
+### Feature flags
 
-- `feedback` (default): feedback panel rendered with Bevy UI + picking
-- `feedback_egui` (optional): render feedback panel with `bevy_egui`
+- `consent` (default): telemetry consent state + consent modal UI.
+- `feedback` (default): feedback panel rendered with Bevy UI + picking.
+- `feedback_egui` (optional): render feedback panel with `bevy_egui`.
 
 ```toml
-# Keep default Bevy UI panel (no extra feature needed)
+# Keep default consent + feedback UI features
 bevy-mod-indigauge = { version = "0.7" }
 
 # Enable optional bevy_egui feedback panel backend (native only)

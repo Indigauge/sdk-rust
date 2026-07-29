@@ -69,6 +69,54 @@ jobs:
           RUSTC_WRAPPER: sccache
         run: cargo doc --workspace --no-deps --all-features
 
+  bevy_feature_matrix:
+    name: bevy-mod-indigauge feature matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: default
+            args: ""
+          - name: no-default-features
+            args: "--no-default-features"
+          - name: consent-only
+            args: "--no-default-features --features consent"
+          - name: feedback-only
+            args: "--no-default-features --features feedback"
+          - name: feedback-egui
+            args: "--no-default-features --features feedback_egui"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{env.RUST_TOOLCHAIN_VERSION}}
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libx11-dev libasound2-dev libudev-dev \
+            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libwayland-dev wayland-protocols libxkbcommon-dev
+
+      - name: Set up sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          key: ${{ runner.os }}-bevy-feature-matrix-${{ hashFiles('**/Cargo.toml', 'rust-toolchain*') }}
+
+      - name: cargo check (${{ matrix.name }})
+        env:
+          RUSTC_WRAPPER: sccache
+        run: cargo check -p bevy-mod-indigauge ${{ matrix.args }}
+
   test:
     name: Tests
     runs-on: ubuntu-latest

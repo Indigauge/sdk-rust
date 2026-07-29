@@ -163,27 +163,15 @@ fn setup(mut commands: Commands) {
   ));
 }
 
-fn initialize_session_with_consent(
-  mut commands: Commands,
-  consent_state: Res<IndigaugeConsentState>,
-  mut next_state: ResMut<NextState<GameState>>,
-) {
-  match consent_state.choice {
-    IndigaugeConsentChoice::Accepted => {
-      commands.trigger(StartSessionEvent::default());
-    },
-    IndigaugeConsentChoice::Declined => {
-      next_state.set(GameState::Setup);
-    },
-    IndigaugeConsentChoice::Unknown => {
-      commands.insert_resource(
-        ConsentModalProps::new()
-          .title("Allow telemetry for Flappy Bird?")
-          .message("Anonymous gameplay data helps us tune difficulty and fix issues.")
-          .accept_button_text("Allow")
-          .decline_button_text("Decline"),
-      );
-    },
+fn initialize_session_with_consent(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Allow telemetry for Flappy Bird?")
+        .message("Anonymous gameplay data helps us tune difficulty and fix issues.")
+        .accept_button_text("Allow")
+        .decline_button_text("Decline"),
+    );
   }
 }
 

@@ -214,27 +214,15 @@ fn setup_camera(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
 }
 
-fn initialize_session_with_consent(
-  mut commands: Commands,
-  consent_state: Res<IndigaugeConsentState>,
-  mut next_state: ResMut<NextState<GameState>>,
-) {
-  match consent_state.choice {
-    IndigaugeConsentChoice::Accepted => {
-      commands.trigger(StartSessionEvent::default());
-    },
-    IndigaugeConsentChoice::Declined => {
-      next_state.set(GameState::Playing);
-    },
-    IndigaugeConsentChoice::Unknown => {
-      commands.insert_resource(
-        ConsentModalProps::new()
-          .title("Allow anonymous telemetry?")
-          .message("Telemetry helps us tune gameplay and fix crashes. You can change this later.")
-          .accept_button_text("Allow")
-          .decline_button_text("Decline"),
-      );
-    },
+fn initialize_session_with_consent(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Allow anonymous telemetry?")
+        .message("Telemetry helps us tune gameplay and fix crashes. You can change this later.")
+        .accept_button_text("Allow")
+        .decline_button_text("Decline"),
+    );
   }
 }
 
