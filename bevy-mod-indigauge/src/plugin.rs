@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::{
   config::*,
+  consent::ConsentPlugin,
   event::{
     EventsPlugin,
     resources::{BufferedEvents, EventQueueReceiver},
@@ -109,6 +110,7 @@ where
 
     app
       .add_plugins(ReqwestPlugin)
+      .add_plugins(ConsentPlugin)
       .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())
