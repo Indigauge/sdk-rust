@@ -11,10 +11,21 @@ use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
+use crate::state::telemetry_consent_granted;
 use crate::utils::select;
 
 const USER_CONSENT_HEADER_NAME: &str = "X-Indigauge-User-Consent";
-const USER_CONSENT_HEADER_VALUE: &str = "yes";
+const USER_CONSENT_HEADER_VALUE_ACCEPTED: &str = "yes";
+const USER_CONSENT_HEADER_VALUE_DECLINED: &str = "no";
+
+#[inline]
+fn user_consent_header_value() -> &'static str {
+  if telemetry_consent_granted() {
+    USER_CONSENT_HEADER_VALUE_ACCEPTED
+  } else {
+    USER_CONSENT_HEADER_VALUE_DECLINED
+  }
+}
 
 /// Errors that can occur when building SDK HTTP requests.
 #[derive(Debug)]
@@ -166,7 +177,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
-      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .json(payload)
       .build()?;
 
@@ -228,7 +239,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
-      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .body(png_bytes)
       .build()?;
 
@@ -261,7 +272,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
-      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .json(payload)
       .build()?;
 
@@ -331,7 +342,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
-      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .body(png_bytes)
       .build()?;
 
@@ -384,36 +395,91 @@ pub fn get_or_init_player_id(game_name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+  use std::sync::{Mutex, OnceLock};
+
   use super::*;
+  use crate::state::set_telemetry_consent;
+
+  fn consent_test_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+  }
 
   #[test]
-  fn async_requests_include_user_consent_header() {
+  fn async_requests_include_yes_when_consent_granted() {
+    let _lock = consent_test_lock()
+      .lock()
+      .expect("consent test lock should not be poisoned");
     let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
     let client = Client::new();
     let http = SdkHttpClient::new(&client, &config);
+    set_telemetry_consent(true);
 
     let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
-    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_ACCEPTED);
 
     let screenshot = http
       .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
       .expect("screenshot request should build");
-    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_ACCEPTED);
+  }
+
+  #[test]
+  fn async_requests_include_no_when_consent_not_granted() {
+    let _lock = consent_test_lock()
+      .lock()
+      .expect("consent test lock should not be poisoned");
+    let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
+    let client = Client::new();
+    let http = SdkHttpClient::new(&client, &config);
+    set_telemetry_consent(false);
+
+    let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_DECLINED);
+
+    let screenshot = http
+      .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
+      .expect("screenshot request should build");
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_DECLINED);
   }
 
   #[cfg(not(target_family = "wasm"))]
   #[test]
-  fn blocking_requests_include_user_consent_header() {
+  fn blocking_requests_include_yes_when_consent_granted() {
+    let _lock = consent_test_lock()
+      .lock()
+      .expect("consent test lock should not be poisoned");
     let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
     let client = BlockingClient::new();
     let http = SdkBlockingHttpClient::new(&client, &config);
+    set_telemetry_consent(true);
 
     let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
-    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_ACCEPTED);
 
     let screenshot = http
       .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
       .expect("screenshot request should build");
-    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_ACCEPTED);
+  }
+
+  #[cfg(not(target_family = "wasm"))]
+  #[test]
+  fn blocking_requests_include_no_when_consent_not_granted() {
+    let _lock = consent_test_lock()
+      .lock()
+      .expect("consent test lock should not be poisoned");
+    let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
+    let client = BlockingClient::new();
+    let http = SdkBlockingHttpClient::new(&client, &config);
+    set_telemetry_consent(false);
+
+    let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_DECLINED);
+
+    let screenshot = http
+      .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
+      .expect("screenshot request should build");
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE_DECLINED);
   }
 }

@@ -34,7 +34,7 @@ where
 /// Observer that handles [`StartSessionEvent`] and triggers session startup flow.
 pub fn observe_start_session_event(
   _event: On<StartSessionEvent>,
-  mut ig: BevyIndigauge,
+  #[allow(unused_mut)] mut ig: BevyIndigauge,
   mut cmd: Commands,
   #[cfg(feature = "consent")] consent_state: Res<crate::consent::resources::IndigaugeConsentState>,
 ) {
@@ -63,6 +63,7 @@ pub fn observe_start_session_event(
     return;
   }
 
+  #[allow(unreachable_code)]
   match **ig.mode {
     IndigaugeMode::Dev => {
       let dev_response = StartSessionResponse::dev();
