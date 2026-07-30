@@ -35,6 +35,43 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
   }
 
   #[cfg(feature = "feedback")]
+  pub(crate) fn send_feedback_screenshot(&mut self, api_key: &str, feedback_id: &str, image_data: Vec<u8>) {
+    match **self.mode {
+      IndigaugeMode::Live => match self
+        .runtime_client()
+        .feedback_screenshot(api_key, feedback_id, image_data)
+      {
+        Ok(request) => {
+          self
+            .reqwest_client
+            .send(request)
+            .on_response(|trigger: On<ReqwestResponseEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+              match response_disposition_for_level(&log_level, trigger.status()) {
+                Some(ResponseDisposition::Success) => info!(message = "Sent feedback screenshot"),
+                Some(ResponseDisposition::Failure) => error!(message = "Failed to send feedback screenshot"),
+                None => {},
+              }
+            })
+            .on_error(|trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+              if should_log_transport_error(&log_level) {
+                error!(message = "Failed to send feedback", error = ?trigger.event().error);
+              }
+            });
+        },
+        Err(error) => {
+          if **self.log_level <= IndigaugeLogLevel::Error {
+            error!(message = "Failed to build feedback screenshot request", ?error);
+          }
+        },
+      },
+      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
+        info!(message = "DEVMODE: Sent feedback screenshot");
+      },
+      _ => {},
+    }
+  }
+
+  #[cfg(feature = "feedback")]
   pub(crate) fn send_feedback<RB, RM, OR>(&mut self, api_key: &str, payload: &FeedbackPayload, on_response: OR)
   where
     RB: Bundle,

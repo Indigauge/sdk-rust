@@ -144,7 +144,7 @@ The SDK enforces consent at runtime:
 - `IndigaugeConsentChoice::Unknown` means no choice has been made yet.
 
 For GDPR hardening, automatic session-start payload fields that can increase fingerprinting risk are no longer sent (`player_id`, `platform`, `os`, `cpu_family`, `cores`, `memory`, `gpu`).
-Additionally, feedback screenshot upload is disabled.
+Feedback screenshot upload remains available as an explicit player opt-in via the feedback form.
 
 On native targets, consent can be persisted automatically in the user preference folder (`dirs::preference_dir()/GAME_NAME/telemetry_consent.txt`).
 
