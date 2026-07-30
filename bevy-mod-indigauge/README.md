@@ -133,9 +133,18 @@ ig_error!("physics.failed", { "component": "rigid_body" });
 
 You can optionally show a built-in consent modal before starting telemetry. The modal is fully customizable (style + copy), and the selected choice is stored in [`IndigaugeConsentState`].
 
+The SDK enforces consent at runtime:
+
+- No session is started unless consent is explicitly `Accepted`.
+- If consent is `Declined` (or feature `consent` is disabled), telemetry transmission is blocked.
+- If consent is revoked after acceptance, active session credentials and queued telemetry are discarded.
+
 - `IndigaugeConsentChoice::Accepted` means the player allowed telemetry.
 - `IndigaugeConsentChoice::Declined` means the player declined telemetry.
 - `IndigaugeConsentChoice::Unknown` means no choice has been made yet.
+
+For GDPR hardening, automatic session-start payload fields that can increase fingerprinting risk are no longer sent (`player_id`, `platform`, `os`, `cpu_family`, `cores`, `memory`, `gpu`).
+Additionally, feedback screenshot upload is disabled.
 
 On native targets, consent can be persisted automatically in the user preference folder (`dirs::preference_dir()/GAME_NAME/telemetry_consent.txt`).
 

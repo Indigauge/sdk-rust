@@ -1,6 +1,6 @@
-use std::{env::consts::OS, time::Instant};
+use std::time::Instant;
 
-use bevy::{diagnostic::SystemInfo, prelude::*, render::renderer::RenderAdapterInfo, state::state::FreelyMutableState};
+use bevy::{prelude::*, state::state::FreelyMutableState};
 
 use bevy::log::{error, info, warn};
 use indigauge_core::http::decode_api_response;
@@ -14,9 +14,11 @@ use crate::{
   http_runtime::{ReqwestErrorEvent, ReqwestResponseEvent},
   prelude::*,
   session::resources::SessionApiKey,
-  session::utils::{bucket_cores, bucket_ram_gb, coarsen_cpu_name},
   utils::BevyIndigauge,
 };
+
+#[cfg(feature = "consent")]
+use crate::consent::resources::IndigaugeConsentChoice;
 use indigauge_core::state::{get_global_tx, get_session_start_instant, set_session_start_instant};
 
 /// Returns an observer that advances a Bevy state when session init completes.
@@ -31,11 +33,10 @@ where
 
 /// Observer that handles [`StartSessionEvent`] and triggers session startup flow.
 pub fn observe_start_session_event(
-  event: On<StartSessionEvent>,
+  _event: On<StartSessionEvent>,
   mut ig: BevyIndigauge,
   mut cmd: Commands,
-  sys_info: Option<Res<SystemInfo>>,
-  render_info: Option<Res<RenderAdapterInfo>>,
+  #[cfg(feature = "consent")] consent_state: Res<crate::consent::resources::IndigaugeConsentState>,
 ) {
   if get_session_start_instant().is_some() {
     if **ig.log_level <= IndigaugeLogLevel::Warn {
@@ -47,6 +48,18 @@ pub fn observe_start_session_event(
 
   if get_global_tx().is_none() {
     cmd.trigger(IndigaugeInitDoneEvent::UnexpectedFailure("Global transaction not initialized".to_string()));
+    return;
+  }
+
+  #[cfg(feature = "consent")]
+  if consent_state.choice != IndigaugeConsentChoice::Accepted {
+    cmd.trigger(IndigaugeInitDoneEvent::Skipped("Session blocked: explicit player consent is required".to_string()));
+    return;
+  }
+
+  #[cfg(not(feature = "consent"))]
+  {
+    cmd.trigger(IndigaugeInitDoneEvent::Skipped("Session blocked: consent feature is disabled".to_string()));
     return;
   }
 
@@ -63,36 +76,16 @@ pub fn observe_start_session_event(
     _ => {},
   }
 
-  #[cfg(not(target_family = "wasm"))]
-  let player_id = Some(ig.get_or_init_player_id());
-
-  #[cfg(target_family = "wasm")]
-  let player_id = None::<String>;
-
-  let event = event.event();
-  let cores = sys_info
-    .as_ref()
-    .and_then(|i| i.core_count.parse().map(bucket_cores).ok());
-  let memory = sys_info.as_ref().and_then(|i| {
-    i.memory
-      .split('.')
-      .collect::<Vec<_>>()
-      .first()
-      .and_then(|m| m.parse().map(bucket_ram_gb).ok())
-  });
-  let cpu_family = sys_info.as_ref().and_then(|i| coarsen_cpu_name(&i.cpu));
-  let gpu = render_info.as_ref().map(|i| &i.name);
-
   let payload = StartSessionPayload {
     client_version: ig.config.game_version(),
     sdk_version: concat!("bevy:", env!("CARGO_PKG_VERSION")),
-    player_id: player_id.as_ref(),
-    platform: event.platform.as_ref(),
-    os: Some(OS),
-    cpu_family: cpu_family.as_ref(),
-    cores,
-    memory,
-    gpu,
+    player_id: None,
+    platform: None,
+    os: None,
+    cpu_family: None,
+    cores: None,
+    memory: None,
+    gpu: None,
   };
 
   match ig.runtime_client().start_session(&payload) {

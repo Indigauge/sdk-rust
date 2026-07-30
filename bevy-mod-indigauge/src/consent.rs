@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 use crate::consent::{
   resources::IndigaugeConsentState,
-  systems::{emit_consent_selected_event, load_persisted_consent, persist_consent_choice},
+  systems::{
+    emit_consent_selected_event, enforce_consent_gate, load_persisted_consent, persist_consent_choice,
+    sync_core_consent_flag,
+  },
 };
 
 #[cfg(feature = "consent")]
@@ -28,10 +31,12 @@ impl Plugin for ConsentPlugin {
   fn build(&self, app: &mut App) {
     app
       .init_resource::<IndigaugeConsentState>()
-      .add_systems(Startup, load_persisted_consent)
+      .add_systems(Startup, (load_persisted_consent, sync_core_consent_flag).chain())
       .add_systems(
         Update,
         (
+          sync_core_consent_flag,
+          enforce_consent_gate,
           persist_consent_choice,
           emit_consent_selected_event,
           #[cfg(feature = "consent")]

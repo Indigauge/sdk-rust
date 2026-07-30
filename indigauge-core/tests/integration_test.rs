@@ -1,12 +1,13 @@
 use std::time::Instant;
 
-use indigauge_core::state::{enqueue, init, set_session_start_instant};
+use indigauge_core::state::{enqueue, init, set_session_start_instant, set_telemetry_consent};
 use serde_json::json;
 
 #[test]
 fn test_core_event_flow() {
   // 1. Init core system
   let rx = init(100).expect("Failed to init core");
+  set_telemetry_consent(true);
 
   // 2. Set session start time (required for enqueue to work)
   set_session_start_instant(Instant::now()).expect("Failed to set start instant");

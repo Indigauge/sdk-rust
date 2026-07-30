@@ -10,7 +10,10 @@ use crate::{
     resources::{IndigaugeConsentChoice, IndigaugeConsentState},
     utils::consent_file_path,
   },
+  event::resources::{BufferedEvents, EventQueueReceiver},
+  session::resources::SessionApiKey,
 };
+use indigauge_core::state::set_telemetry_consent;
 
 #[cfg(feature = "consent")]
 use crate::consent::{
@@ -76,6 +79,34 @@ pub fn persist_consent_choice(config: Res<BevyIndigaugeConfig>, consent_state: R
         let _ = fs::remove_file(path);
       },
     }
+  }
+}
+
+/// Synchronizes current consent state into indigauge-core global consent gate.
+pub fn sync_core_consent_flag(consent_state: Res<IndigaugeConsentState>) {
+  set_telemetry_consent(consent_state.choice == IndigaugeConsentChoice::Accepted);
+}
+
+/// Revokes active telemetry session and clears queued/buffered events when consent is not accepted.
+pub fn enforce_consent_gate(
+  mut commands: Commands,
+  consent_state: Res<IndigaugeConsentState>,
+  session_key: Option<Res<SessionApiKey>>,
+  mut buffered_events: ResMut<BufferedEvents>,
+  mut queue_receiver: Option<ResMut<EventQueueReceiver>>,
+) {
+  if consent_state.choice == IndigaugeConsentChoice::Accepted {
+    return;
+  }
+
+  if session_key.is_some() {
+    commands.remove_resource::<SessionApiKey>();
+  }
+
+  buffered_events.events.clear();
+
+  if let Some(receiver) = queue_receiver.as_mut() {
+    while receiver.try_recv().is_ok() {}
   }
 }
 

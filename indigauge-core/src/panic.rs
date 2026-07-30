@@ -4,10 +4,10 @@ use crate::runtime::IndigaugeBlockingRuntimeClient;
 use crate::runtime::IndigaugeRuntimeClient;
 
 use crate::state::drain_pending_events;
+use crate::state::telemetry_consent_granted;
 use crate::types::BatchEventPayload;
 use indigauge_types::prelude::IndigaugeConfig;
-use indigauge_types::prelude::{DEV_SESSION_TOKEN, EventPayload, EventPayloadCtx};
-use serde_json::json;
+use indigauge_types::prelude::{DEV_SESSION_TOKEN, EventPayload};
 use std::panic::PanicHookInfo;
 use std::time::Instant;
 #[cfg(target_family = "wasm")]
@@ -28,18 +28,8 @@ fn send_pending_events_payload(info: &PanicHookInfo<'_>, session_start: Instant)
 fn end_session_payload(info: &PanicHookInfo<'_>, session_start: Instant) -> EventPayload {
   let elapsed_ms = Instant::now().duration_since(session_start).as_millis();
 
-  let metadata = info
-    .payload()
-    .downcast_ref::<&str>()
-    .map(|s| json!({"message": s.to_string()}));
-
-  let context = info.location().map(|loc| EventPayloadCtx {
-    file: loc.file().to_string(),
-    line: loc.line(),
-    module: None,
-  });
-
-  EventPayload::new("game.crash", "fatal", metadata, elapsed_ms).with_context(context)
+  let _ = info;
+  EventPayload::new("game.crash", "fatal", None, elapsed_ms)
 }
 
 /// Panic hook that ships a crash event and session end to the Indigauge backend.
@@ -53,7 +43,7 @@ pub fn panic_handler_with_config(
   let sdk_client = IndigaugeBlockingRuntimeClient::new(config);
 
   move |info| {
-    if session_api_key == DEV_SESSION_TOKEN {
+    if session_api_key == DEV_SESSION_TOKEN || !telemetry_consent_granted() {
       return;
     }
 
@@ -77,7 +67,7 @@ pub fn panic_handler_with_config(
   let sdk_client = IndigaugeRuntimeClient::new(config);
 
   move |info| {
-    if session_api_key == DEV_SESSION_TOKEN {
+    if session_api_key == DEV_SESSION_TOKEN || !telemetry_consent_granted() {
       return;
     }
 

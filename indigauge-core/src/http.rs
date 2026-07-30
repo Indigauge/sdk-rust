@@ -13,6 +13,9 @@ use serde_json::{Value, json};
 
 use crate::utils::select;
 
+const USER_CONSENT_HEADER_NAME: &str = "X-Indigauge-User-Consent";
+const USER_CONSENT_HEADER_VALUE: &str = "yes";
+
 /// Errors that can occur when building SDK HTTP requests.
 #[derive(Debug)]
 pub enum SdkBuildError {
@@ -163,6 +166,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
+      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
       .json(payload)
       .build()?;
 
@@ -224,6 +228,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
+      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
       .body(png_bytes)
       .build()?;
 
@@ -256,6 +261,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
+      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
       .json(payload)
       .build()?;
 
@@ -325,6 +331,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
+      .header(USER_CONSENT_HEADER_NAME, USER_CONSENT_HEADER_VALUE)
       .body(png_bytes)
       .build()?;
 
@@ -372,5 +379,41 @@ pub fn get_or_init_player_id(game_name: &str) -> String {
     }
   } else {
     Uuid::new_v4().to_string()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn async_requests_include_user_consent_header() {
+    let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
+    let client = Client::new();
+    let http = SdkHttpClient::new(&client, &config);
+
+    let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+
+    let screenshot = http
+      .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
+      .expect("screenshot request should build");
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+  }
+
+  #[cfg(not(target_family = "wasm"))]
+  #[test]
+  fn blocking_requests_include_user_consent_header() {
+    let config = IndigaugeConfig::new("test-game", "public-key", "1.0.0");
+    let client = BlockingClient::new();
+    let http = SdkBlockingHttpClient::new(&client, &config);
+
+    let heartbeat = http.heartbeat("session-token").expect("heartbeat request should build");
+    assert_eq!(heartbeat.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
+
+    let screenshot = http
+      .feedback_screenshot("session-token", "feedback-id", vec![0x89, 0x50, 0x4E, 0x47])
+      .expect("screenshot request should build");
+    assert_eq!(screenshot.headers()[USER_CONSENT_HEADER_NAME], USER_CONSENT_HEADER_VALUE);
   }
 }

@@ -1,4 +1,4 @@
-use std::{ops::Deref, time::Instant};
+use std::time::Instant;
 
 use crate::{
   feedback::components::FeedbackPanel,
@@ -8,14 +8,9 @@ use crate::{
   session::resources::SessionApiKey,
   utils::BevyIndigauge,
 };
-use bevy::log::error;
-use bevy::{
-  prelude::*,
-  render::view::screenshot::{Screenshot, ScreenshotCaptured},
-  state::state::FreelyMutableState,
-};
-use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
-use indigauge_core::types::{FeedbackPayload, IdResponse};
+use bevy::log::warn;
+use bevy::{prelude::*, state::state::FreelyMutableState};
+use indigauge_core::types::FeedbackPayload;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use crate::feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText};
@@ -160,40 +155,12 @@ pub(crate) fn submit_feedback(
 }
 
 fn maybe_take_screenshot(
-  trigger: On<ReqwestResponseEvent>,
+  _trigger: On<ReqwestResponseEvent>,
   mut commands: Commands,
   take_screenshot: Option<Res<TakeScreenshot>>,
 ) {
-  if take_screenshot.is_some()
-    && let Ok(feedback_id) = trigger.event().deserialize_json::<IdResponse>()
-  {
+  if take_screenshot.is_some() {
     commands.remove_resource::<TakeScreenshot>();
-    commands.spawn(Screenshot::primary_window()).observe(
-      move |trigger: On<ScreenshotCaptured>, mut ig: BevyIndigauge, api_key: Res<SessionApiKey>| {
-        let img = trigger.event().deref().clone();
-
-        match img.try_into_dynamic() {
-          Ok(dyn_img) => {
-            let data = dyn_img.to_rgb8().to_vec();
-            let mut png = Vec::new();
-            let enc = PngEncoder::new(&mut png);
-
-            if enc
-              .write_image(&data, dyn_img.width(), dyn_img.height(), ColorType::Rgb8.into())
-              .is_ok()
-            {
-              ig.send_feedback_screenshot(&api_key, &feedback_id, png);
-            } else if **ig.log_level <= IndigaugeLogLevel::Error {
-              error!(message = "Failed to encode screenshot as PNG");
-            }
-          },
-          Err(error) => {
-            if **ig.log_level <= IndigaugeLogLevel::Error {
-              error!(message = "Failed to convert screenshot into dynamic image", ?error);
-            }
-          },
-        }
-      },
-    );
+    warn!(message = "Feedback screenshot upload is disabled for GDPR safety");
   }
 }
