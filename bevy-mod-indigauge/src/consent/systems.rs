@@ -40,49 +40,53 @@ type DeclineConsentInteractionQuery<'w, 's> = Query<
 >;
 
 /// Loads persisted telemetry consent from the user's preference folder.
+#[cfg(not(target_family = "wasm"))]
 pub fn load_persisted_consent(config: Res<BevyIndigaugeConfig>, mut consent_state: ResMut<IndigaugeConsentState>) {
-  #[cfg(not(target_family = "wasm"))]
-  {
-    let Some(path) = consent_file_path(config.game_name()) else {
-      return;
-    };
+  let Some(path) = consent_file_path(config.game_name()) else {
+    return;
+  };
 
-    let Ok(value) = fs::read_to_string(path) else {
-      return;
-    };
+  let Ok(value) = fs::read_to_string(path) else {
+    return;
+  };
 
-    if let Some(choice) = IndigaugeConsentChoice::from_disk_value(&value) {
-      consent_state.choice = choice;
-      consent_state.persist_to_disk = true;
-    }
+  if let Some(choice) = IndigaugeConsentChoice::from_disk_value(&value) {
+    consent_state.choice = choice;
+    consent_state.persist_to_disk = true;
   }
 }
 
+/// Loads persisted telemetry consent from the user's preference folder.
+#[cfg(target_family = "wasm")]
+pub fn load_persisted_consent(_config: Res<BevyIndigaugeConfig>, _consent_state: ResMut<IndigaugeConsentState>) {}
+
 /// Persists telemetry consent choice to the user's preference folder.
+#[cfg(not(target_family = "wasm"))]
 pub fn persist_consent_choice(config: Res<BevyIndigaugeConfig>, consent_state: Res<IndigaugeConsentState>) {
   if !consent_state.persist_to_disk {
     return;
   }
 
-  #[cfg(not(target_family = "wasm"))]
-  {
-    let Some(path) = consent_file_path(config.game_name()) else {
-      return;
-    };
+  let Some(path) = consent_file_path(config.game_name()) else {
+    return;
+  };
 
-    match consent_state.choice.as_disk_value() {
-      Some(value) => {
-        if let Some(parent) = path.parent() {
-          let _ = fs::create_dir_all(parent);
-        }
-        let _ = fs::write(path, value);
-      },
-      None => {
-        let _ = fs::remove_file(path);
-      },
-    }
+  match consent_state.choice.as_disk_value() {
+    Some(value) => {
+      if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+      }
+      let _ = fs::write(path, value);
+    },
+    None => {
+      let _ = fs::remove_file(path);
+    },
   }
 }
+
+/// Persists telemetry consent choice to the user's preference folder.
+#[cfg(target_family = "wasm")]
+pub fn persist_consent_choice(_config: Res<BevyIndigaugeConfig>, _consent_state: Res<IndigaugeConsentState>) {}
 
 /// Synchronizes current consent state into indigauge-core global consent gate.
 pub fn sync_core_consent_flag(consent_state: Res<IndigaugeConsentState>) {

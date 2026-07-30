@@ -10,6 +10,7 @@ pub enum IndigaugeConsentChoice {
 }
 
 impl IndigaugeConsentChoice {
+  #[cfg(not(target_family = "wasm"))]
   pub(crate) fn as_disk_value(self) -> Option<&'static str> {
     match self {
       Self::Accepted => Some("accepted"),
@@ -18,6 +19,7 @@ impl IndigaugeConsentChoice {
     }
   }
 
+  #[cfg(not(target_family = "wasm"))]
   pub(crate) fn from_disk_value(value: &str) -> Option<Self> {
     match value.trim().to_ascii_lowercase().as_str() {
       "accepted" => Some(Self::Accepted),
