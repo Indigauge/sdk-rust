@@ -8,12 +8,14 @@ use crate::{
   consent::{
     events::IndigaugeConsentSelectedEvent,
     resources::{IndigaugeConsentChoice, IndigaugeConsentState},
-    utils::consent_file_path,
   },
   event::resources::{BufferedEvents, EventQueueReceiver},
   session::resources::SessionApiKey,
 };
 use indigauge_core::state::set_telemetry_consent;
+
+#[cfg(not(target_family = "wasm"))]
+use crate::consent::utils::consent_file_path;
 
 #[cfg(feature = "consent")]
 use crate::consent::{
