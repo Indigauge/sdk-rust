@@ -27,13 +27,14 @@ bevy = "0.19"
 bevy-mod-indigauge = { version = "0.7" }
 ```
 
-### Feedback backend features
+### Feature flags
 
-- `feedback` (default): feedback panel rendered with Bevy UI + picking
-- `feedback_egui` (optional): render feedback panel with `bevy_egui`
+- `consent` (default): telemetry consent state + consent modal UI.
+- `feedback` (default): feedback panel rendered with Bevy UI + picking.
+- `feedback_egui` (optional): render feedback panel with `bevy_egui`.
 
 ```toml
-# Keep default Bevy UI panel (no extra feature needed)
+# Keep default consent + feedback UI features
 bevy-mod-indigauge = { version = "0.7" }
 
 # Enable optional bevy_egui feedback panel backend (native only)
@@ -127,6 +128,108 @@ Send structured events with macros. The events will only be sent if a session wa
 ig_info!("player.jump", { "height": 2.4 });
 ig_error!("physics.failed", { "component": "rigid_body" });
 ```
+
+## Consent modal
+
+You can optionally show a built-in consent modal before starting telemetry. The modal is fully customizable (style + copy), and the selected choice is stored in [`IndigaugeConsentState`].
+
+The SDK enforces consent at runtime:
+
+- No session is started unless consent is explicitly `Accepted`.
+- If consent is `Declined` (or feature `consent` is disabled), telemetry transmission is blocked.
+- If consent is revoked after acceptance, active session credentials and queued telemetry are discarded.
+
+- `IndigaugeConsentChoice::Accepted` means the player allowed telemetry.
+- `IndigaugeConsentChoice::Declined` means the player declined telemetry.
+- `IndigaugeConsentChoice::Unknown` means no choice has been made yet.
+
+For GDPR hardening, automatic session-start payload fields that can increase fingerprinting risk are no longer sent (`player_id`, `platform`, `os`, `cpu_family`, `cores`, `memory`, `gpu`).
+Feedback screenshot upload remains available as an explicit player opt-in via the feedback form.
+
+On native targets, consent can be persisted automatically in the user preference folder (`dirs::preference_dir()/GAME_NAME/telemetry_consent.txt`).
+
+### Basic flow
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_mod_indigauge::prelude::*;
+
+fn main() {
+  App::new()
+    .add_plugins(DefaultPlugins)
+    .add_plugins(IndigaugePlugin::<EmptySessionMeta>::new("YOUR_PUBLIC_KEY", "My game", env!("CARGO_PKG_VERSION")))
+    .add_systems(Startup, show_consent_if_needed)
+    .add_observer(on_consent_selected)
+    .run();
+}
+
+fn show_consent_if_needed(mut commands: Commands, consent: Res<IndigaugeConsentState>) {
+  if consent.choice == IndigaugeConsentChoice::Unknown {
+    commands.insert_resource(ConsentModalProps::default());
+  }
+}
+
+fn on_consent_selected(trigger: On<IndigaugeConsentSelectedEvent>, mut commands: Commands) {
+  if trigger.event().choice == IndigaugeConsentChoice::Accepted {
+    commands.trigger(StartSessionEvent::default());
+  }
+}
+```
+
+### Customize modal copy and placement
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_mod_indigauge::prelude::*;
+
+fn show_custom_consent_modal(mut commands: Commands) {
+  commands.insert_resource(
+    ConsentModalProps::new()
+      .title("Help us improve gameplay")
+      .message("Allow anonymous telemetry so we can tune balance, fix crashes, and improve performance.")
+      .accept_button_text("Allow telemetry")
+      .decline_button_text("No thanks")
+      .persist_choice(true)
+      .spawn_position(ConsentModalSpawnPosition::Center)
+      .margin(UiRect::all(Val::Px(20.0))),
+  );
+}
+```
+
+### Customize modal visual style
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_mod_indigauge::prelude::*;
+
+fn setup_consent_theme(mut commands: Commands) {
+  commands.insert_resource(ConsentModalStyles {
+    overlay: Color::srgba_u8(10, 15, 26, 214),
+    background: Color::srgb_u8(15, 23, 42),
+    border: Color::srgb_u8(71, 85, 105),
+    text_primary: Color::srgb_u8(248, 250, 252),
+    text_secondary: Color::srgb_u8(203, 213, 225),
+    accept_button: Color::srgb_u8(34, 197, 94),
+    accept_button_hover: Color::srgb_u8(22, 163, 74),
+    decline_button: Color::srgb_u8(71, 85, 105),
+    decline_button_hover: Color::srgb_u8(51, 65, 85),
+  });
+}
+```
+
+### Read and update consent state manually
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_mod_indigauge::prelude::*;
+
+fn opt_out(mut consent: ResMut<IndigaugeConsentState>) {
+  consent.choice = IndigaugeConsentChoice::Declined;
+  consent.persist_to_disk = true;
+}
+```
+
+When `persist_to_disk` is `true`, any changed choice is written on the next update tick.
 
 ## Tracing support
 

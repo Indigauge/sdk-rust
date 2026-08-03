@@ -1,4 +1,4 @@
-use std::{ops::Deref, time::Instant};
+use std::time::Instant;
 
 use crate::{
   feedback::components::FeedbackPanel,
@@ -16,6 +16,7 @@ use bevy::{
 };
 use image::{ColorType, ImageEncoder, codecs::png::PngEncoder};
 use indigauge_core::types::{FeedbackPayload, IdResponse};
+use std::ops::Deref;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 use crate::feedback::components::{CategoryButtonText, CategoryItem, MessageInput, ScreenshotToggleText};

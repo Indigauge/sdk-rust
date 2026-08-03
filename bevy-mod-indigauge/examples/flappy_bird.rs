@@ -95,7 +95,8 @@ fn main() {
         .log_level(IndigaugeLogLevel::Info),
     )
     .add_systems(Startup, setup)
-    .add_systems(OnEnter(GameState::InitializeSession), start_default_session)
+    .add_systems(OnEnter(GameState::InitializeSession), initialize_session_with_consent)
+    .add_observer(handle_consent_selection)
     .add_observer(switch_state_after_session_init(GameState::Setup))
     // Switch to paused state when feedback is spawned
     .add_observer(switch_state_on_feedback_spawn(GameState::Paused))
@@ -151,7 +152,7 @@ fn setup(mut commands: Commands) {
     .with_child((TextSpan::new("0"), TextColor(TEXT_COLOR)));
 
   commands.spawn((
-    Text::new("SPACE flap | R restart | F2 default feedback | F3 bug report"),
+    Text::new("SPACE flap | R restart | Consent modal on startup | F2 default feedback | F3 bug report"),
     TextColor(TEXT_COLOR),
     Node {
       position_type: PositionType::Absolute,
@@ -160,6 +161,34 @@ fn setup(mut commands: Commands) {
       ..default()
     },
   ));
+}
+
+fn initialize_session_with_consent(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Allow telemetry for Flappy Bird?")
+        .message("Anonymous gameplay data helps us tune difficulty and fix issues.")
+        .accept_button_text("Allow")
+        .decline_button_text("Decline"),
+    );
+  }
+}
+
+fn handle_consent_selection(
+  trigger: On<IndigaugeConsentSelectedEvent>,
+  mut commands: Commands,
+  mut next_state: ResMut<NextState<GameState>>,
+) {
+  match trigger.event().choice {
+    IndigaugeConsentChoice::Accepted => {
+      commands.trigger(StartSessionEvent::default());
+    },
+    IndigaugeConsentChoice::Declined => {
+      next_state.set(GameState::Setup);
+    },
+    IndigaugeConsentChoice::Unknown => {},
+  }
 }
 
 #[allow(clippy::too_many_arguments)]

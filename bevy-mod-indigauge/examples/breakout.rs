@@ -94,7 +94,8 @@ fn main() {
     .insert_resource(ClearColor(BACKGROUND_COLOR))
     .add_message::<CollisionEvent>()
     .add_systems(Startup, setup_camera)
-    .add_systems(OnEnter(GameState::InitializeSession), start_default_session)
+    .add_systems(OnEnter(GameState::InitializeSession), initialize_session_with_consent)
+    .add_observer(handle_consent_selection)
     .add_systems(OnEnter(GameState::Playing), setup_game)
     .add_observer(switch_state_after_session_init(GameState::Playing))
     // Switch to paused state when feedback is spawned
@@ -211,6 +212,34 @@ struct ScoreboardUi;
 
 fn setup_camera(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
+}
+
+fn initialize_session_with_consent(mut commands: Commands, consent_state: Res<IndigaugeConsentState>) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Allow anonymous telemetry?")
+        .message("Telemetry helps us tune gameplay and fix crashes. You can change this later.")
+        .accept_button_text("Allow")
+        .decline_button_text("Decline"),
+    );
+  }
+}
+
+fn handle_consent_selection(
+  trigger: On<IndigaugeConsentSelectedEvent>,
+  mut commands: Commands,
+  mut next_state: ResMut<NextState<GameState>>,
+) {
+  match trigger.event().choice {
+    IndigaugeConsentChoice::Accepted => {
+      commands.trigger(StartSessionEvent::default());
+    },
+    IndigaugeConsentChoice::Declined => {
+      next_state.set(GameState::Playing);
+    },
+    IndigaugeConsentChoice::Unknown => {},
+  }
 }
 
 // Add the game's entities to our world
