@@ -1,5 +1,6 @@
 use crate::runtime::IndigaugeBlockingRuntimeClient;
 use crate::state::drain_pending_events;
+use crate::state::telemetry_consent_granted;
 use crate::types::BatchEventPayload;
 use indigauge_types::prelude::{EventPayload, EventPayloadCtx, IndigaugeConfig, StartSessionResponse};
 use serde_json::json;
@@ -15,7 +16,7 @@ pub fn panic_handler_with_config(
   let sdk_client = IndigaugeBlockingRuntimeClient::new(config);
 
   move |info| {
-    if session_api_key == StartSessionResponse::dev().session_token {
+    if session_api_key == StartSessionResponse::dev().session_token || !telemetry_consent_granted() {
       return;
     }
 

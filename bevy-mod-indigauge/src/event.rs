@@ -47,6 +47,8 @@ mod tests {
   use bevy::render::settings::{RenderCreation, WgpuSettings};
 
   use super::*;
+  #[cfg(feature = "consent")]
+  use crate::consent::resources::{IndigaugeConsentChoice, IndigaugeConsentState};
   use crate::{
     plugin::IndigaugePlugin,
     prelude::{EmptySessionMeta, IndigaugeMode, StartSessionEvent, ig_debug, ig_error, ig_info, ig_warn},
@@ -98,6 +100,12 @@ mod tests {
     sub_app.update_schedule = Some(Update.intern());
     sub_app.add_systems(Update, (sub_app_log_system_one, sub_app_log_system_two));
     app.insert_sub_app(LoggingSubApp, sub_app);
+
+    #[cfg(feature = "consent")]
+    app.world_mut().insert_resource(IndigaugeConsentState {
+      choice: IndigaugeConsentChoice::Accepted,
+      persist_to_disk: false,
+    });
 
     app.world_mut().trigger(StartSessionEvent::default());
 

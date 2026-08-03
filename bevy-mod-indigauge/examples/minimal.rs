@@ -2,8 +2,9 @@ use std::{env, time::Duration};
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_mod_indigauge::prelude::{
-  EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeLogLevel, IndigaugeMode,
-  IndigaugePlugin, StartSessionEvent, ig_info,
+  ConsentModalProps, ConsentModalStyles, EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles,
+  IndigaugeConsentChoice, IndigaugeConsentState, IndigaugeLogLevel, IndigaugeMode, IndigaugePlugin, StartSessionEvent,
+  ig_info,
 };
 
 struct EventType;
@@ -38,17 +39,36 @@ fn main() {
       warning: Color::srgb_u8(250, 204, 21),
       accent: Color::srgb_u8(168, 85, 247),
     })
+    .insert_resource(ConsentModalStyles {
+      overlay: Color::srgba_u8(10, 15, 26, 214),
+      background: Color::srgb_u8(15, 23, 42),
+      border: Color::srgb_u8(71, 85, 105),
+      text_primary: Color::srgb_u8(248, 250, 252),
+      text_secondary: Color::srgb_u8(203, 213, 225),
+      accept_button: Color::srgb_u8(34, 197, 94),
+      accept_button_hover: Color::srgb_u8(22, 163, 74),
+      decline_button: Color::srgb_u8(71, 85, 105),
+      decline_button_hover: Color::srgb_u8(51, 65, 85),
+    })
     .add_systems(Startup, setup)
-    .add_systems(Update, (trigger_feedback_with_question, track_counter.run_if(on_timer(Duration::from_secs(2)))))
+    .add_systems(
+      Update,
+      (
+        setup_consent_modal,
+        trigger_session_after_persisted_accept,
+        trigger_feedback_with_question,
+        track_counter.run_if(on_timer(Duration::from_secs(2))),
+      ),
+    )
     .run();
 }
 
 fn setup(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
-  commands.trigger(StartSessionEvent::new().with_platform("steam"));
 
   const HELP_TEXT_DEFAULT: &str = "Press 'F2' to display the default feedback panel!\n";
   const HELP_TEXT_WITH_QUESTION: &str = "Press 'SPACE' to display the feedback panel with a question!\n";
+  const HELP_TEXT_WITH_CONSENT: &str = "Consent modal is shown before session start.\n";
 
   commands
     .spawn(Node {
@@ -57,9 +77,39 @@ fn setup(mut commands: Commands) {
       ..default()
     })
     .with_children(|builder| {
+      builder.spawn(Text::new(HELP_TEXT_WITH_CONSENT));
       builder.spawn(Text::new(HELP_TEXT_DEFAULT));
       builder.spawn(Text::new(HELP_TEXT_WITH_QUESTION));
     });
+}
+
+fn setup_consent_modal(
+  mut commands: Commands,
+  consent_state: Res<IndigaugeConsentState>,
+  existing: Option<Res<ConsentModalProps>>,
+) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown && existing.is_none() {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Help improve this game")
+        .message("Allow anonymous telemetry so we can improve performance, balance, and stability.")
+        .accept_button_text("Allow telemetry")
+        .decline_button_text("No thanks"),
+    );
+  }
+}
+
+fn trigger_session_after_persisted_accept(
+  mut commands: Commands,
+  consent_state: Res<IndigaugeConsentState>,
+  mut started: Local<bool>,
+) {
+  if *started || !consent_state.is_accepted() {
+    return;
+  }
+
+  commands.trigger(StartSessionEvent::new().with_platform("steam"));
+  *started = true;
 }
 
 fn trigger_feedback_with_question(

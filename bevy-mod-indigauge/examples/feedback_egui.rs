@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_mod_indigauge::prelude::{
-  EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles, IndigaugeLogLevel, IndigaugeMode,
-  IndigaugePlugin, StartSessionEvent,
+  ConsentModalProps, EmptySessionMeta, FeedbackCategory, FeedbackPanelProps, FeedbackPanelStyles,
+  IndigaugeConsentChoice, IndigaugeConsentState, IndigaugeLogLevel, IndigaugeMode, IndigaugePlugin, StartSessionEvent,
 };
 
 fn main() {
@@ -14,13 +14,20 @@ fn main() {
     )
     .insert_resource(FeedbackPanelStyles::default())
     .add_systems(Startup, setup)
-    .add_systems(Update, (trigger_bug_report_feedback, trigger_level_feedback))
+    .add_systems(
+      Update,
+      (
+        setup_consent_modal,
+        trigger_session_after_persisted_accept,
+        trigger_bug_report_feedback,
+        trigger_level_feedback,
+      ),
+    )
     .run();
 }
 
 fn setup(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
-  commands.trigger(StartSessionEvent::new());
 
   commands
     .spawn(Node {
@@ -39,11 +46,41 @@ fn setup(mut commands: Commands) {
         })
         .with_children(|column| {
           column.spawn(Text::new("bevy_egui feedback panel example"));
+          column.spawn(Text::new("Consent modal is shown before session start"));
           column.spawn(Text::new("Press F2 for default panel"));
           column.spawn(Text::new("Press F3 for a bug report question panel"));
           column.spawn(Text::new("Press SPACE for a gameplay question panel"));
         });
     });
+}
+
+fn setup_consent_modal(
+  mut commands: Commands,
+  consent_state: Res<IndigaugeConsentState>,
+  existing: Option<Res<ConsentModalProps>>,
+) {
+  if consent_state.choice == IndigaugeConsentChoice::Unknown && existing.is_none() {
+    commands.insert_resource(
+      ConsentModalProps::new()
+        .title("Allow anonymous telemetry?")
+        .message("Telemetry helps us improve reliability and gameplay quality.")
+        .accept_button_text("Allow")
+        .decline_button_text("Decline"),
+    );
+  }
+}
+
+fn trigger_session_after_persisted_accept(
+  mut commands: Commands,
+  consent_state: Res<IndigaugeConsentState>,
+  mut started: Local<bool>,
+) {
+  if *started || !consent_state.is_accepted() {
+    return;
+  }
+
+  commands.trigger(StartSessionEvent::new());
+  *started = true;
 }
 
 fn trigger_bug_report_feedback(

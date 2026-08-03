@@ -11,7 +11,21 @@ use reqwest::{Client, Method, Request, StatusCode, header::HeaderMap};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 
+use crate::state::telemetry_consent_granted;
 use crate::utils::select;
+
+const USER_CONSENT_HEADER_NAME: &str = "X-Indigauge-User-Consent";
+const USER_CONSENT_HEADER_VALUE_ACCEPTED: &str = "yes";
+const USER_CONSENT_HEADER_VALUE_DECLINED: &str = "no";
+
+#[inline]
+fn user_consent_header_value() -> &'static str {
+  if telemetry_consent_granted() {
+    USER_CONSENT_HEADER_VALUE_ACCEPTED
+  } else {
+    USER_CONSENT_HEADER_VALUE_DECLINED
+  }
+}
 
 /// Errors that can occur when building SDK HTTP requests.
 #[derive(Debug)]
@@ -163,6 +177,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .json(payload)
       .build()?;
 
@@ -224,6 +239,7 @@ impl<'a> SdkHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .body(png_bytes)
       .build()?;
 
@@ -256,6 +272,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "application/json")
       .header("X-Indigauge-Key", api_key)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .json(payload)
       .build()?;
 
@@ -325,6 +342,7 @@ impl<'a> SdkBlockingHttpClient<'a> {
       .timeout(self.config.request_timeout())
       .header("Content-Type", "image/png")
       .header("X-Indigauge-Key", session_token)
+      .header(USER_CONSENT_HEADER_NAME, user_consent_header_value())
       .body(png_bytes)
       .build()?;
 

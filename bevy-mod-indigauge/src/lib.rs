@@ -3,6 +3,8 @@
 pub(crate) mod utils;
 
 pub(crate) mod config;
+#[cfg(feature = "consent")]
+pub(crate) mod consent;
 pub(crate) mod event;
 pub(crate) mod http_runtime;
 pub(crate) mod text_edit;
@@ -25,6 +27,11 @@ pub mod prelude {
   pub use crate::config::{BevyIndigaugeLogLevel, BevyIndigaugeMode};
   pub use indigauge_core::state::enqueue;
 
+  #[cfg(feature = "consent")]
+  pub use crate::consent::events::IndigaugeConsentSelectedEvent;
+  #[cfg(feature = "consent")]
+  pub use crate::consent::resources::{IndigaugeConsentChoice, IndigaugeConsentState};
+
   #[cfg(feature = "feedback")]
   pub use crate::feedback::observers::{switch_state_on_feedback_despawn, switch_state_on_feedback_spawn};
   #[cfg(feature = "feedback")]
@@ -39,4 +46,7 @@ pub mod prelude {
     events::{IndigaugeInitDoneEvent, StartSessionEvent},
     resources::EmptySessionMeta,
   };
+
+  #[cfg(feature = "consent")]
+  pub use crate::consent::resources::{ConsentModalProps, ConsentModalSpawnPosition, ConsentModalStyles};
 }

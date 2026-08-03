@@ -14,6 +14,9 @@ use crate::{
   http_runtime::ReqwestPlugin,
   session::{SessionPlugin, resources::EmptySessionMeta},
 };
+
+#[cfg(feature = "consent")]
+use crate::consent::ConsentPlugin;
 use bevy::log::{info, warn};
 
 /// Main Bevy plugin entrypoint for Indigauge telemetry and feedback features.
@@ -107,8 +110,12 @@ where
     #[cfg(feature = "feedback")]
     app.add_plugins(crate::feedback::FeedbackUiPlugin);
 
+    app.add_plugins(ReqwestPlugin);
+
+    #[cfg(feature = "consent")]
+    app.add_plugins(ConsentPlugin);
+
     app
-      .add_plugins(ReqwestPlugin)
       .add_plugins((EventsPlugin::new(config.flush_interval()), SessionPlugin::<M>::new(config.flush_interval())))
       .insert_resource(self.log_level.clone())
       .insert_resource(BufferedEvents::default())

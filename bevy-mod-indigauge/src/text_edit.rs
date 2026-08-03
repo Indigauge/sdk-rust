@@ -315,6 +315,7 @@ fn unfocus_text_box(
   }
 }
 
+#[allow(clippy::type_complexity)]
 fn focus_text_box(
   mut commands: Commands,
   mut focused_texts: Query<
@@ -336,6 +337,8 @@ fn focus_text_box(
   }
 }
 
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 pub fn listen_changing_focus(
   mut commands: Commands,
   input: Res<ButtonInput<MouseButton>>,
@@ -475,11 +478,14 @@ fn listen_keyboard_input(
   }
 }
 
+type TextCursorQuery<'w, 's> =
+  Query<'w, 's, (&'static mut Text, &'static mut CursorPosition), (With<TextEditFocus>, With<TextEditable>)>;
+
 fn blink_cursor(
   time: Res<Time>,
   mut blink_interval: ResMut<BlinkInterval>,
   display_text_cursor: Res<DisplayTextCursor>,
-  mut query: Query<(&mut Text, &CursorPosition), (With<TextEditFocus>, With<TextEditable>)>,
+  mut query: TextCursorQuery,
   config: Res<TextEditConfig>,
 ) {
   blink_interval.tick(time.delta());
