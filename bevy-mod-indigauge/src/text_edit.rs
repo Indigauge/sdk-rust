@@ -110,23 +110,6 @@ pub enum TextFocusChanged {
 #[derive(Component)]
 pub struct TextEditFocus;
 
-/// Mark a text is editable.
-/// You can limit which characters are allowed to enter through `filter_in` and `filter_out` attribute (regex is supported):
-/// ```rust
-/// use bevy::prelude::*;
-/// use bevy_text_edit::TextEditable;
-///
-/// fn setup(mut commands: Commands) {
-///     commands.spawn((
-///         TextEditable {
-///             filter_in: vec!["[0-9]".into(), " ".into()], // Only allow number and space
-///             filter_out: vec!["5".into()],                // Ignore number 5
-///             ..default()
-///         },
-///         Text::new("Input Text 1"),
-///     ));
-/// }
-/// ```
 #[derive(Component)]
 #[require(Interaction, Text, GlobalTransform)]
 pub struct TextEditable {
