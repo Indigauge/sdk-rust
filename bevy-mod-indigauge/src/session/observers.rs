@@ -57,13 +57,6 @@ pub fn observe_start_session_event(
     return;
   }
 
-  #[cfg(not(feature = "consent"))]
-  {
-    cmd.trigger(IndigaugeInitDoneEvent::Skipped("Session blocked: consent feature is disabled".to_string()));
-    return;
-  }
-
-  #[allow(unreachable_code)]
   match **ig.mode {
     IndigaugeMode::Dev => {
       let dev_response = StartSessionResponse::dev();
