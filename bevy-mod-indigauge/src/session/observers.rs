@@ -1,4 +1,4 @@
-use std::{env::consts::OS, time::Instant};
+use std::time::Instant;
 
 use bevy::{prelude::*, state::state::FreelyMutableState};
 
