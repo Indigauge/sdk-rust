@@ -18,11 +18,6 @@ fn test_session_start_serialization() {
     sdk_version: "2.0.0",
     player_id: Some(&"player1".to_string()),
     platform: None,
-    os: None,
-    cpu_family: None,
-    cores: None,
-    memory: None,
-    gpu: None,
   };
 
   let json = serde_json::to_string(&session).expect("Serialize");
