@@ -5,7 +5,7 @@ on:
       - "**.md"
       - "static/**"
   pull_request:
-    branches: [main]
+    branches: [main, bevy-0.18]
     paths-ignore:
       - "**.md"
       - "static/**"
