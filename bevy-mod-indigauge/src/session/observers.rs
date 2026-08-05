@@ -33,7 +33,7 @@ where
 
 /// Observer that handles [`StartSessionEvent`] and triggers session startup flow.
 pub fn observe_start_session_event(
-  _event: On<StartSessionEvent>,
+  event: On<StartSessionEvent>,
   #[allow(unused_mut)] mut ig: BevyIndigauge,
   mut cmd: Commands,
   #[cfg(feature = "consent")] consent_state: Res<crate::consent::resources::IndigaugeConsentState>,
@@ -57,13 +57,6 @@ pub fn observe_start_session_event(
     return;
   }
 
-  #[cfg(not(feature = "consent"))]
-  {
-    cmd.trigger(IndigaugeInitDoneEvent::Skipped("Session blocked: consent feature is disabled".to_string()));
-    return;
-  }
-
-  #[allow(unreachable_code)]
   match **ig.mode {
     IndigaugeMode::Dev => {
       let dev_response = StartSessionResponse::dev();
@@ -77,16 +70,19 @@ pub fn observe_start_session_event(
     _ => {},
   }
 
+  #[cfg(not(target_family = "wasm"))]
+  let player_id = Some(ig.get_or_init_player_id());
+
+  #[cfg(target_family = "wasm")]
+  let player_id = None::<String>;
+
+  let event = event.event();
+
   let payload = StartSessionPayload {
     client_version: ig.config.game_version(),
     sdk_version: concat!("bevy:", env!("CARGO_PKG_VERSION")),
-    player_id: None,
-    platform: None,
-    os: None,
-    cpu_family: None,
-    cores: None,
-    memory: None,
-    gpu: None,
+    player_id: player_id.as_ref(),
+    platform: event.platform.as_ref(),
   };
 
   match ig.runtime_client().start_session(&payload) {
