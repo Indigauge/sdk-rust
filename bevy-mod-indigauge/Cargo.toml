@@ -1,6 +1,6 @@
 [package]
 name = "bevy-mod-indigauge"
-version = "0.6.11"
+version = "0.6.12"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Understand your users. Grow your game. Track events, session health, and user sentiment with zero fuss"
@@ -76,7 +76,7 @@ futures-lite = "2"
 bevy_egui = { version = "0.39", optional = true }
 winit = { version = "0.30", features = ["x11"], optional = true }
 image = { version = "0.25", optional = true }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 regex-lite = "0.1"
 
 indigauge-core = { path = "../indigauge-core", version = "0.6", default-features = false }
