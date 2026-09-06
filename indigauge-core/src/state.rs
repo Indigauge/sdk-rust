@@ -1,4 +1,5 @@
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 use std::{collections::VecDeque, sync::Mutex};
 
@@ -10,6 +11,7 @@ use crate::event::{QueuedEvent, set_event_dispatcher};
 pub(crate) static GLOBAL_TX: OnceLock<Sender<QueuedEvent>> = OnceLock::new();
 pub(crate) static SESSION_START_INSTANT: OnceLock<Instant> = OnceLock::new();
 pub(crate) static PENDING_EVENTS: OnceLock<Mutex<VecDeque<QueuedEvent>>> = OnceLock::new();
+pub(crate) static TELEMETRY_CONSENT: AtomicBool = AtomicBool::new(false);
 
 fn pending_events_lock() -> &'static Mutex<VecDeque<QueuedEvent>> {
   PENDING_EVENTS.get_or_init(|| Mutex::new(VecDeque::new()))
@@ -73,6 +75,16 @@ pub fn get_session_start_instant() -> Option<&'static Instant> {
   SESSION_START_INSTANT.get()
 }
 
+/// Sets whether telemetry may be enqueued and transmitted.
+pub fn set_telemetry_consent(consented: bool) {
+  TELEMETRY_CONSENT.store(consented, Ordering::Relaxed);
+}
+
+/// Returns true if telemetry consent is currently granted.
+pub fn telemetry_consent_granted() -> bool {
+  TELEMETRY_CONSENT.load(Ordering::Relaxed)
+}
+
 #[inline]
 /// Queues a validated event in the global sender if a session is active.
 pub fn enqueue(
@@ -83,6 +95,10 @@ pub fn enqueue(
   line: u32,
   module: &'static str,
 ) -> bool {
+  if !telemetry_consent_granted() {
+    return false;
+  }
+
   let tx = match GLOBAL_TX.get() {
     Some(tx) => tx,
     None => return false,

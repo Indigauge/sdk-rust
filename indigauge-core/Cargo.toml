@@ -1,6 +1,6 @@
 [package]
 name = "indigauge-core"
-version = "0.7.1"
+version = "0.7.5"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Core primitives for the Indigauge Rust SDK: event macros, tracing layer, and helpers"
@@ -18,7 +18,7 @@ panic_handler = []
 tracing = ["dep:tracing", "dep:tracing-subscriber"]
 
 [dependencies]
-indigauge-types = { path = "../indigauge-types", version = "0.6.0" }
+indigauge-types = { path = "../indigauge-types", version = "0.7.4" }
 serde_json.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tracing = { version = "0.1", optional = true }
@@ -34,3 +34,6 @@ features = ["json", "rustls-tls", "blocking"]
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 dirs = "6.0"
 uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen-futures = "0.4"
