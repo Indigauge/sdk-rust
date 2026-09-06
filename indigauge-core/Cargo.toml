@@ -18,7 +18,7 @@ panic_handler = []
 tracing = ["dep:tracing", "dep:tracing-subscriber"]
 
 [dependencies]
-indigauge-types = { path = "../indigauge-types", version = "0.7.4" }
+indigauge-types = { path = "../indigauge-types", version = "0.7" }
 serde_json.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tracing = { version = "0.1", optional = true }
@@ -28,8 +28,8 @@ bytes = "1"
 crossbeam-channel = "0.5.15"
 
 [dependencies.reqwest]
-version = "0.12"
-features = ["json", "rustls-tls", "blocking"]
+version = "0.13"
+features = ["json", "rustls", "blocking"]
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 dirs = "6.0"
