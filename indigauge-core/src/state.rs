@@ -1,5 +1,5 @@
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Instant;
 use std::{collections::VecDeque, sync::Mutex};
 
@@ -10,6 +10,7 @@ use crate::event::{QueuedEvent, set_event_dispatcher};
 
 pub(crate) static GLOBAL_TX: OnceLock<Sender<QueuedEvent>> = OnceLock::new();
 pub(crate) static SESSION_START_INSTANT: OnceLock<Instant> = OnceLock::new();
+static SESSION_GENERATION: AtomicU64 = AtomicU64::new(0);
 pub(crate) static PENDING_EVENTS: OnceLock<Mutex<VecDeque<QueuedEvent>>> = OnceLock::new();
 pub(crate) static TELEMETRY_CONSENT: AtomicBool = AtomicBool::new(false);
 
@@ -68,11 +69,18 @@ pub fn get_global_tx() -> Option<&'static Sender<QueuedEvent>> {
 }
 
 pub fn set_session_start_instant(instant: Instant) -> Result<(), Instant> {
-  SESSION_START_INSTANT.set(instant)
+  SESSION_START_INSTANT.set(instant).inspect(|_| {
+    SESSION_GENERATION.fetch_add(1, Ordering::Release);
+  })
 }
 
 pub fn get_session_start_instant() -> Option<&'static Instant> {
   SESSION_START_INSTANT.get()
+}
+
+/// Returns the active session generation, or zero before a session starts.
+pub fn session_generation() -> u64 {
+  SESSION_GENERATION.load(Ordering::Acquire)
 }
 
 /// Sets whether telemetry may be enqueued and transmitted.
