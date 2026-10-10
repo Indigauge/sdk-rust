@@ -127,7 +127,13 @@ Send structured events with macros. The events will only be sent if a session wa
 ```rust,ignore
 ig_info!("player.jump", { "height": 2.4 });
 ig_error!("physics.failed", { "component": "rigid_body" });
+
+// Emits once from this call site during the active session.
+ig_info_once!("level.loaded", { "level": level_number });
 ```
+
+The `ig_trace_once!`, `ig_debug_once!`, `ig_info_once!`, `ig_warn_once!`, and `ig_error_once!` variants deduplicate
+each macro call site independently. If an event cannot be queued, that call site remains eligible to retry.
 
 ## Consent modal
 

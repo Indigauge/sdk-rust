@@ -19,7 +19,8 @@ pub mod tracing;
 
 pub mod prelude {
   pub use indigauge_core::prelude::{
-    IndigaugeLogLevel, IndigaugeMode, enqueue_ig_event, ig_debug, ig_error, ig_event, ig_info, ig_trace, ig_warn,
+    IndigaugeLogLevel, IndigaugeMode, enqueue_ig_event, ig_debug, ig_debug_once, ig_error, ig_error_once, ig_event,
+    ig_event_once, ig_info, ig_info_once, ig_trace, ig_trace_once, ig_warn, ig_warn_once,
     validate_event_type_compile_time,
   };
 

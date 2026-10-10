@@ -1,4 +1,5 @@
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use indigauge_types::prelude::EventPayload;
 use serde_json::Value;
@@ -56,6 +57,40 @@ pub fn dispatch_event(
     .get()
     .map(|dispatch| dispatch(level, event_type, metadata, file, line, module))
     .unwrap_or(false)
+}
+
+/// Dispatches an event at most once from a given call site during the active session.
+#[doc(hidden)]
+pub fn dispatch_event_once<F>(
+  last_session: &AtomicU64,
+  level: &'static str,
+  event_type: &str,
+  metadata: F,
+  file: &'static str,
+  line: u32,
+  module: &'static str,
+) -> bool
+where
+  F: FnOnce() -> Option<Value>,
+{
+  let session = crate::state::session_generation();
+  let previous_session = last_session.load(Ordering::Acquire);
+  if session == 0 || previous_session == session {
+    return false;
+  }
+  if last_session
+    .compare_exchange(previous_session, session, Ordering::AcqRel, Ordering::Acquire)
+    .is_err()
+  {
+    return false;
+  }
+
+  if dispatch_event(level, event_type, metadata(), file, line, module) {
+    true
+  } else {
+    let _ = last_session.compare_exchange(session, previous_session, Ordering::AcqRel, Ordering::Acquire);
+    false
+  }
 }
 
 /// Runtime validation for event types.
@@ -154,6 +189,37 @@ pub mod macros {
     }};
   }
 
+  /// Emit an Indigauge event only once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_event_once {
+    ($level:ident, $etype:expr $(,)?) => {{
+      const _VALID: &str = $crate::event::validate_event_type_compile_time($etype);
+      static _LAST_SESSION: ::std::sync::atomic::AtomicU64 = ::std::sync::atomic::AtomicU64::new(0);
+      let _ = $crate::event::dispatch_event_once(
+        &_LAST_SESSION,
+        stringify!($level),
+        $etype,
+        || None,
+        file!(),
+        line!(),
+        module_path!(),
+      );
+    }};
+    ($level:ident, $etype:expr, { $($key:tt : $value:expr),* $(,)? }) => {{
+      const _VALID: &str = $crate::event::validate_event_type_compile_time($etype);
+      static _LAST_SESSION: ::std::sync::atomic::AtomicU64 = ::std::sync::atomic::AtomicU64::new(0);
+      let _ = $crate::event::dispatch_event_once(
+        &_LAST_SESSION,
+        stringify!($level),
+        $etype,
+        || Some(serde_json::json!({ $($key : $value),* })),
+        file!(),
+        line!(),
+        module_path!(),
+      );
+    }};
+  }
+
   /// Logs or enqueues a **trace-level** event to Indigauge.
   ///
   /// # Format
@@ -176,6 +242,12 @@ pub mod macros {
       ($($tt:tt)*) => { $crate::ig_event!(trace, $($tt)*); }
   }
 
+  /// Logs a trace-level event once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_trace_once {
+      ($($tt:tt)*) => { $crate::ig_event_once!(trace, $($tt)*); }
+    }
+
   /// Logs or enqueues a **debug-level** event to Indigauge.
   ///
   /// # Format
@@ -197,6 +269,12 @@ pub mod macros {
   macro_rules! ig_debug {
       ($($tt:tt)*) => { $crate::ig_event!(debug, $($tt)*); }
   }
+
+  /// Logs a debug-level event once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_debug_once {
+      ($($tt:tt)*) => { $crate::ig_event_once!(debug, $($tt)*); }
+    }
 
   /// Logs or enqueues an **info-level** event to Indigauge.
   ///
@@ -223,6 +301,12 @@ pub mod macros {
       ($($tt:tt)*) => { $crate::ig_event!(info, $($tt)*); }
   }
 
+  /// Logs an info-level event once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_info_once {
+      ($($tt:tt)*) => { $crate::ig_event_once!(info, $($tt)*); }
+    }
+
   /// Logs or enqueues a **warning-level** event to Indigauge.
   ///
   /// Used for non-fatal issues that should be visible in dashboards or analytics.
@@ -246,6 +330,12 @@ pub mod macros {
   macro_rules! ig_warn {
       ($($tt:tt)*) => { $crate::ig_event!(warn, $($tt)*); }
   }
+
+  /// Logs a warning-level event once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_warn_once {
+      ($($tt:tt)*) => { $crate::ig_event_once!(warn, $($tt)*); }
+    }
 
   /// Logs or enqueues an **error-level** event to Indigauge.
   ///
@@ -271,6 +361,12 @@ pub mod macros {
   #[macro_export]
   macro_rules! ig_error {
       ($($tt:tt)*) => { $crate::ig_event!(error, $($tt)*); }
+  }
+
+  /// Logs an error-level event once from this call site during a session.
+  #[macro_export]
+  macro_rules! ig_error_once {
+      ($($tt:tt)*) => { $crate::ig_event_once!(error, $($tt)*); }
   }
 }
 
