@@ -25,6 +25,8 @@ impl Plugin for FeedbackUiPlugin {
       .init_resource::<FeedbackKeyCodeToggle>()
       .init_resource::<FeedbackPanelStyles>();
 
+    app.add_systems(Update, close_after_thank_you.run_if(resource_exists::<FeedbackPanelProps>));
+
     #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
     app
       .add_plugins(FeathersPlugins)
@@ -40,6 +42,7 @@ impl Plugin for FeedbackUiPlugin {
           systems::update_scroll_position,
           systems::handle_hover_and_click_styles,
           systems::error_sync.run_if(resource_exists::<FeedbackPanelProps>),
+          systems::show_thank_you.run_if(resource_exists::<FeedbackPanelProps>),
         )
           .run_if(resource_exists::<SessionApiKey>),
       );
@@ -59,5 +62,78 @@ impl Plugin for FeedbackUiPlugin {
           .run_if(resource_exists::<SessionApiKey>),
       );
     }
+  }
+}
+
+fn close_after_thank_you(
+  mut commands: Commands,
+  time: Res<Time<Real>>,
+  mut form: ResMut<FeedbackFormState>,
+  props: Res<FeedbackPanelProps>,
+) {
+  if props.is_changed() {
+    return;
+  }
+  if let Some(remaining) = &mut form.thank_you_remaining {
+    *remaining = remaining.saturating_sub(time.delta());
+    if remaining.is_zero() {
+      commands.remove_resource::<FeedbackPanelProps>();
+      form.thank_you_remaining = None;
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::time::Duration;
+
+  #[test]
+  fn thank_you_closes_after_real_time_duration() {
+    let mut app = App::new();
+    app
+      .init_resource::<Time<Real>>()
+      .init_resource::<FeedbackFormState>()
+      .insert_resource(FeedbackPanelProps::default())
+      .add_systems(Update, close_after_thank_you.run_if(resource_exists::<FeedbackPanelProps>));
+    app.update();
+    app
+      .world_mut()
+      .resource_mut::<FeedbackFormState>()
+      .complete_submission(&FeedbackPanelProps::default());
+    app
+      .world_mut()
+      .resource_mut::<Time<Real>>()
+      .advance_by(Duration::from_millis(1999));
+    app.update();
+    assert!(app.world().contains_resource::<FeedbackPanelProps>());
+    app
+      .world_mut()
+      .resource_mut::<Time<Real>>()
+      .advance_by(Duration::from_millis(1));
+    app.update();
+    assert!(!app.world().contains_resource::<FeedbackPanelProps>());
+  }
+
+  #[test]
+  fn replacement_panel_is_not_closed_by_previous_timer() {
+    let mut app = App::new();
+    app
+      .init_resource::<Time<Real>>()
+      .init_resource::<FeedbackFormState>()
+      .insert_resource(FeedbackPanelProps::default())
+      .add_systems(Update, close_after_thank_you.run_if(resource_exists::<FeedbackPanelProps>));
+    app.update();
+    app
+      .world_mut()
+      .resource_mut::<FeedbackFormState>()
+      .complete_submission(&FeedbackPanelProps::default());
+    app.world_mut().insert_resource(FeedbackPanelProps::default());
+    app
+      .world_mut()
+      .resource_mut::<Time<Real>>()
+      .advance_by(Duration::from_secs(5));
+    app.update();
+    assert!(app.world().contains_resource::<FeedbackPanelProps>());
   }
 }

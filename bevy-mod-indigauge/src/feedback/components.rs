@@ -34,6 +34,14 @@ pub struct FeedbackPanel;
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 #[derive(Component)]
+pub(crate) struct FeedbackPanelBody;
+
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[derive(Component)]
+pub(crate) struct FeedbackThankYou;
+
+#[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
+#[derive(Component)]
 /// Marker for the free-text feedback input field.
 pub struct MessageInput;
 
