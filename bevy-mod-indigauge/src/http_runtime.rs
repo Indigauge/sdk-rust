@@ -76,6 +76,7 @@ impl ReqwestPlugin {
 pub struct BevyReqwestBuilder<'a>(EntityCommands<'a>);
 
 impl<'a> BevyReqwestBuilder<'a> {
+  #[cfg(feature = "feedback")]
   pub(crate) fn id(&self) -> Entity {
     self.0.id()
   }
