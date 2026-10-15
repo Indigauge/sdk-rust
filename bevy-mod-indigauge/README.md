@@ -120,6 +120,26 @@ fn track_counter(mut counter: Local<u32>) {
 }
 ```
 
+## Feedback confirmation
+
+After a successful submission, both feedback UI backends display "Thank you for your feedback!"
+for two seconds before closing. Failed submissions keep the form open for retry.
+Development mode simulates a successful submission without sending a request.
+
+Configure the confirmation through `FeedbackPanelProps`:
+
+```rust
+use std::time::Duration;
+use bevy_mod_indigauge::prelude::*;
+
+let props = FeedbackPanelProps::default()
+  .show_thank_you(true)
+  .thank_you_message("Thanks for helping us improve!")
+  .thank_you_duration(Duration::from_secs(3));
+```
+
+Use `.show_thank_you(false)` to close immediately after success.
+
 ## Sending events
 
 Send structured events with macros. The events will only be sent if a session was successfully started.

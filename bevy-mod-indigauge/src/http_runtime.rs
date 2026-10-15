@@ -76,6 +76,10 @@ impl ReqwestPlugin {
 pub struct BevyReqwestBuilder<'a>(EntityCommands<'a>);
 
 impl<'a> BevyReqwestBuilder<'a> {
+  pub(crate) fn id(&self) -> Entity {
+    self.0.id()
+  }
+
   pub fn on_response<RB: Bundle, RM, OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>>(
     mut self,
     on_response: OR,
@@ -239,7 +243,7 @@ impl ReqwestInflight {
 
 #[derive(Clone, EntityEvent, Debug)]
 pub struct ReqwestResponseEvent {
-  entity: Entity,
+  pub(crate) entity: Entity,
   bytes: bytes::Bytes,
   status: StatusCode,
   headers: HeaderMap,
@@ -279,7 +283,7 @@ impl ReqwestResponseEvent {
     &self.headers
   }
 
-  fn new(entity: Entity, bytes: bytes::Bytes, status: StatusCode, headers: HeaderMap) -> Self {
+  pub(crate) fn new(entity: Entity, bytes: bytes::Bytes, status: StatusCode, headers: HeaderMap) -> Self {
     Self {
       entity,
       bytes,

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
 use crate::feedback::types::{FeedbackCategory, FeedbackSpawnPosition};
@@ -98,6 +100,9 @@ impl Default for FeedbackPanelStyles {
 ///   Managed automatically by the plugin.
 /// * `allow_screenshot` – Whether the player should be allowed to attach
 ///   a screenshot with their feedback submission.
+/// * `show_thank_you` - Whether to display a thank-you message after success (default: true).
+/// * `thank_you_duration` - Time before closing the success message (default: two seconds).
+/// * `thank_you_message` - Text displayed after success (default: "Thank you for your feedback!").
 ///
 /// # See Also
 ///
@@ -123,6 +128,15 @@ pub struct FeedbackPanelProps {
   pub(crate) spawn_position: FeedbackSpawnPosition,
 
   pub(crate) position_margin: UiRect,
+
+  /// Whether to show a thank-you message after successful submission. Defaults to true.
+  pub(crate) show_thank_you: bool,
+
+  /// How long the thank-you message is displayed before closing. Defaults to two seconds.
+  pub(crate) thank_you_duration: Duration,
+
+  /// Text displayed after successful submission.
+  pub(crate) thank_you_message: String,
 }
 
 impl Default for FeedbackPanelProps {
@@ -137,6 +151,9 @@ impl Default for FeedbackPanelProps {
       allow_screenshot: true,
       spawn_position: FeedbackSpawnPosition::default(),
       position_margin: UiRect::all(Val::Px(16.0)),
+      show_thank_you: true,
+      thank_you_duration: Duration::from_secs(2),
+      thank_you_message: "Thank you for your feedback!".to_string(),
     }
   }
 }
@@ -178,6 +195,24 @@ impl FeedbackPanelProps {
     self.position_margin = margin;
     self
   }
+
+  /// Enables or disables the thank-you message after successful submission.
+  pub fn show_thank_you(mut self, show_thank_you: bool) -> Self {
+    self.show_thank_you = show_thank_you;
+    self
+  }
+
+  /// Sets how long the thank-you message is displayed before the panel closes.
+  pub fn thank_you_duration(mut self, duration: Duration) -> Self {
+    self.thank_you_duration = duration;
+    self
+  }
+
+  /// Sets the thank-you text displayed after successful submission.
+  pub fn thank_you_message(mut self, message: impl Into<String>) -> Self {
+    self.thank_you_message = message.into();
+    self
+  }
 }
 
 /// Mutable state used while the user fills out the feedback form.
@@ -189,6 +224,16 @@ pub struct FeedbackFormState {
   pub include_screenshot: bool,
   pub question: Option<String>,
   pub error: Option<String>,
+  pub(crate) pending_submission: Option<Entity>,
+  pub(crate) thank_you_remaining: Option<Duration>,
+}
+
+impl FeedbackFormState {
+  pub(crate) fn complete_submission(&mut self, props: &FeedbackPanelProps) {
+    self.pending_submission = None;
+    self.error = None;
+    self.thank_you_remaining = props.show_thank_you.then_some(props.thank_you_duration);
+  }
 }
 
 // UI-specific transient state for the legacy Bevy UI backend
@@ -202,3 +247,40 @@ pub struct FeedbackUiState {
 /// Marker resource indicating that next feedback submission should include screenshot capture.
 #[derive(Resource)]
 pub struct TakeScreenshot;
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn thank_you_defaults_and_configuration() {
+    let props = FeedbackPanelProps::default();
+    assert!(props.show_thank_you);
+    assert_eq!(props.thank_you_duration, Duration::from_secs(2));
+    assert_eq!(props.thank_you_message, "Thank you for your feedback!");
+
+    let props = FeedbackPanelProps::with_question("What went wrong?", FeedbackCategory::Bugs)
+      .show_thank_you(false)
+      .thank_you_duration(Duration::from_millis(500))
+      .thank_you_message("Thanks for helping us improve!");
+    assert!(!props.show_thank_you);
+    assert_eq!(props.thank_you_duration, Duration::from_millis(500));
+    assert_eq!(props.thank_you_message, "Thanks for helping us improve!");
+  }
+
+  #[test]
+  fn successful_submission_starts_configured_thank_you() {
+    let mut form = FeedbackFormState {
+      pending_submission: Some(Entity::PLACEHOLDER),
+      error: Some("Previous error".to_string()),
+      ..default()
+    };
+    form.complete_submission(&FeedbackPanelProps::default().thank_you_duration(Duration::from_secs(3)));
+    assert!(form.pending_submission.is_none());
+    assert!(form.error.is_none());
+    assert_eq!(form.thank_you_remaining, Some(Duration::from_secs(3)));
+
+    form.complete_submission(&FeedbackPanelProps::default().show_thank_you(false));
+    assert!(form.thank_you_remaining.is_none());
+  }
+}

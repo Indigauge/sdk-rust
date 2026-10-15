@@ -114,10 +114,11 @@ pub fn observe_submit_click(
   mut form: ResMut<FeedbackFormState>,
   mut ig: BevyIndigauge,
   session_key: Res<SessionApiKey>,
+  props: Res<FeedbackPanelProps>,
 ) {
   form.message = q_input.single().map(|s| s.value().to_string()).unwrap_or_default();
   let message = form.message.clone();
-  submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
+  submit_feedback(&mut commands, &mut form, &mut ig, &session_key, &props, message);
 }
 
 pub(crate) fn submit_feedback(
@@ -125,8 +126,13 @@ pub(crate) fn submit_feedback(
   form: &mut FeedbackFormState,
   ig: &mut BevyIndigauge,
   session_key: &SessionApiKey,
+  props: &FeedbackPanelProps,
   message: String,
 ) {
+  if form.pending_submission.is_some() || form.thank_you_remaining.is_some() {
+    return;
+  }
+
   if let Some(start_instant) = indigauge_core::state::get_session_start_instant() {
     let elapsed_ms = Instant::now().duration_since(*start_instant).as_millis();
 
@@ -144,6 +150,8 @@ pub(crate) fn submit_feedback(
 
     if form.include_screenshot {
       commands.insert_resource(TakeScreenshot);
+    } else {
+      commands.remove_resource::<TakeScreenshot>();
     }
 
     let payload = FeedbackPayload {
@@ -152,9 +160,21 @@ pub(crate) fn submit_feedback(
       elapsed_ms,
       question: form.question.as_ref(),
     };
-    ig.send_feedback(session_key, &payload, maybe_take_screenshot);
-
-    commands.remove_resource::<FeedbackPanelProps>();
+    form.error = None;
+    match ig.send_feedback(session_key, &payload, maybe_take_screenshot) {
+      Ok(Some(entity)) => form.pending_submission = Some(entity),
+      Ok(None) => {
+        commands.remove_resource::<TakeScreenshot>();
+        form.complete_submission(props);
+        if !props.show_thank_you {
+          commands.remove_resource::<FeedbackPanelProps>();
+        }
+      },
+      Err(error) => {
+        commands.remove_resource::<TakeScreenshot>();
+        form.error = Some(error);
+      },
+    }
   } else {
     form.error = Some("Failed to submit feedback: session start time not found".to_string());
   }
@@ -164,7 +184,24 @@ fn maybe_take_screenshot(
   trigger: On<ReqwestResponseEvent>,
   mut commands: Commands,
   take_screenshot: Option<Res<TakeScreenshot>>,
+  props: Option<Res<FeedbackPanelProps>>,
+  mut form: ResMut<FeedbackFormState>,
 ) {
+  if form.pending_submission != Some(trigger.entity) {
+    return;
+  }
+  commands.remove_resource::<TakeScreenshot>();
+  if !trigger.status().is_success() {
+    form.pending_submission = None;
+    form.error = Some("Failed to send feedback. Please try again.".to_string());
+    return;
+  }
+  if let Some(props) = props {
+    form.complete_submission(&props);
+    if !props.show_thank_you {
+      commands.remove_resource::<FeedbackPanelProps>();
+    }
+  }
   if take_screenshot.is_some()
     && let Ok(feedback_id) = trigger.event().deserialize_json::<IdResponse>()
   {
@@ -196,5 +233,69 @@ fn maybe_take_screenshot(
         }
       },
     );
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::http_runtime::{HeaderMap, StatusCode};
+
+  fn response_app(props: FeedbackPanelProps) -> (App, Entity) {
+    let mut app = App::new();
+    app.insert_resource(props).init_resource::<FeedbackFormState>();
+    let entity = app.world_mut().spawn_empty().observe(maybe_take_screenshot).id();
+    app.world_mut().resource_mut::<FeedbackFormState>().pending_submission = Some(entity);
+    (app, entity)
+  }
+
+  fn respond(app: &mut App, entity: Entity, status: StatusCode) {
+    app
+      .world_mut()
+      .trigger(ReqwestResponseEvent::new(entity, bytes::Bytes::new(), status, HeaderMap::new()));
+    app.world_mut().flush();
+  }
+
+  #[test]
+  fn success_keeps_panel_open_with_thank_you() {
+    let (mut app, entity) = response_app(FeedbackPanelProps::default());
+    respond(&mut app, entity, StatusCode::CREATED);
+    let form = app.world().resource::<FeedbackFormState>();
+    assert_eq!(form.thank_you_remaining, Some(std::time::Duration::from_secs(2)));
+    assert!(form.pending_submission.is_none());
+    assert!(app.world().contains_resource::<FeedbackPanelProps>());
+  }
+
+  #[test]
+  fn disabled_confirmation_closes_after_success() {
+    let (mut app, entity) = response_app(FeedbackPanelProps::default().show_thank_you(false));
+    respond(&mut app, entity, StatusCode::OK);
+    assert!(!app.world().contains_resource::<FeedbackPanelProps>());
+  }
+
+  #[test]
+  fn failure_keeps_form_for_retry_without_thank_you() {
+    let (mut app, entity) = response_app(FeedbackPanelProps::default());
+    respond(&mut app, entity, StatusCode::INTERNAL_SERVER_ERROR);
+    let form = app.world().resource::<FeedbackFormState>();
+    assert!(form.thank_you_remaining.is_none());
+    assert!(form.pending_submission.is_none());
+    assert!(form.error.is_some());
+    assert!(app.world().contains_resource::<FeedbackPanelProps>());
+  }
+
+  #[test]
+  fn stale_success_does_not_change_replacement_form() {
+    let (mut app, entity) = response_app(FeedbackPanelProps::default());
+    app.world_mut().insert_resource(FeedbackFormState::default());
+    respond(&mut app, entity, StatusCode::OK);
+    assert!(
+      app
+        .world()
+        .resource::<FeedbackFormState>()
+        .thank_you_remaining
+        .is_none()
+    );
+    assert!(app.world().contains_resource::<FeedbackPanelProps>());
   }
 }

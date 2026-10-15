@@ -74,7 +74,12 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
   }
 
   #[cfg(feature = "feedback")]
-  pub(crate) fn send_feedback<RB, RM, OR>(&mut self, api_key: &str, payload: &FeedbackPayload, on_response: OR)
+  pub(crate) fn send_feedback<RB, RM, OR>(
+    &mut self,
+    api_key: &str,
+    payload: &FeedbackPayload,
+    on_response: OR,
+  ) -> Result<Option<bevy::prelude::Entity>, String>
   where
     RB: Bundle,
     OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>,
@@ -82,24 +87,35 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
     match **self.mode {
       IndigaugeMode::Live => match self.runtime_client().feedback(api_key, payload) {
         Ok(request) => {
-          self.reqwest_client.send(request).on_response(on_response).on_error(
-            |trigger: On<ReqwestErrorEvent>, log_level: Res<BevyIndigaugeLogLevel>| {
+          let request = self.reqwest_client.send(request).on_response(on_response).on_error(
+            |trigger: On<ReqwestErrorEvent>,
+             log_level: Res<BevyIndigaugeLogLevel>,
+             mut form: ResMut<crate::feedback::resources::FeedbackFormState>| {
+              if form.pending_submission == Some(trigger.entity) {
+                form.pending_submission = None;
+                form.error = Some("Failed to send feedback. Please try again.".to_string());
+              }
               if should_log_transport_error(&log_level) {
                 error!(message = "Failed to send feedback", error = ?trigger.event().error);
               }
             },
           );
+          Ok(Some(request.id()))
         },
         Err(error) => {
           if **self.log_level <= IndigaugeLogLevel::Error {
             error!(message = "Failed to build feedback request", ?error);
           }
+          Err("Failed to build feedback request. Please try again.".to_string())
         },
       },
-      IndigaugeMode::Dev if **self.log_level <= IndigaugeLogLevel::Info => {
-        info!(message = "DEVMODE: Sent feedback", feedback = ?payload);
+      IndigaugeMode::Dev => {
+        if **self.log_level <= IndigaugeLogLevel::Info {
+          info!(message = "DEVMODE: Sent feedback", feedback = ?payload);
+        }
+        Ok(None)
       },
-      _ => {},
+      IndigaugeMode::Disabled => Err("Feedback is disabled.".to_string()),
     }
   }
 

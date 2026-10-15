@@ -206,6 +206,7 @@ pub fn spawn_feedback_ui(
     .id();
   commands
     .entity(panel_entity)
+    .insert(FeedbackPanelBody)
     .insert(panel(style_background, style_border));
 
   if let Some(title) = panel_title {
@@ -543,6 +544,39 @@ pub fn spawn_feedback_ui(
     .entity(submit_label)
     .insert(ChildOf(submit_button))
     .insert(TextColor(style_text_primary));
+}
+
+/// Replaces the submitted form with its thank-you message.
+pub(crate) fn show_thank_you(
+  mut commands: Commands,
+  form: Res<FeedbackFormState>,
+  props: Res<FeedbackPanelProps>,
+  styles: Res<FeedbackPanelStyles>,
+  mut panels: Query<(Entity, &mut Node), (With<FeedbackPanelBody>, Without<FeedbackThankYou>)>,
+) {
+  if form.thank_you_remaining.is_none() {
+    return;
+  }
+
+  for (entity, mut node) in &mut panels {
+    node.align_items = AlignItems::Center;
+    node.justify_content = JustifyContent::Center;
+    commands
+      .entity(entity)
+      .despawn_children()
+      .insert(FeedbackThankYou)
+      .with_children(|parent| {
+        parent.spawn((
+          Text::new(props.thank_you_message.clone()),
+          TextLayout::justify(Justify::Center),
+          TextFont {
+            font_size: FontSize::Px(22.0),
+            ..default()
+          },
+          TextColor(styles.success),
+        ));
+      });
+  }
 }
 
 /// Syncs `FeedbackFormState::error` to the error text entity in the panel.

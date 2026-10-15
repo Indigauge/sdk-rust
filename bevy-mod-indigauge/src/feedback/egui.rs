@@ -82,6 +82,17 @@ pub fn draw_feedback_ui(
       frame.show(ui, |ui| {
         ui.set_max_width(420.0);
 
+        if form.thank_you_remaining.is_some() {
+          ui.allocate_ui_with_layout(
+            egui::vec2(324.0, 356.0),
+            egui::Layout::centered_and_justified(egui::Direction::TopDown),
+            |ui| {
+              ui.colored_label(to_egui_color(styles.success), egui::RichText::new(&props.thank_you_message).size(22.0));
+            },
+          );
+          return;
+        }
+
         if let Some(title) = &props.title {
           ui.colored_label(to_egui_color(styles.text_primary), egui::RichText::new(title).size(22.0));
           ui.add_space(10.0);
@@ -199,7 +210,11 @@ pub fn draw_feedback_ui(
 
           if styled_button(
             ui,
-            "Submit Feedback",
+            if form.pending_submission.is_some() {
+              "Sending..."
+            } else {
+              "Submit Feedback"
+            },
             styles.primary,
             styles.border,
             styles.text_primary,
@@ -208,7 +223,7 @@ pub fn draw_feedback_ui(
           .clicked()
           {
             let message = form.message.clone();
-            submit_feedback(&mut commands, &mut form, &mut ig, &session_key, message);
+            submit_feedback(&mut commands, &mut form, &mut ig, &session_key, &props, message);
           }
         });
       });
