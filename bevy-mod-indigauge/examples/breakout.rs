@@ -5,8 +5,8 @@ use std::env;
 use bevy::log::BoxedLayer;
 use bevy::{
   log::LogPlugin,
-  math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
   prelude::*,
+  shape::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
 };
 use bevy_feathers::dark_theme::create_dark_theme;
 use bevy_feathers::display::label;
@@ -283,16 +283,16 @@ fn setup_game(
   ]
   .into_iter()
   .for_each(|(txt, margin)| {
-    commands.spawn_scene(bsn! {
-      Node {
-        position_type: PositionType::Absolute,
-        bottom: margin,
-        left: SCOREBOARD_TEXT_PADDING,
-      }
-      Children [
-        (label(txt)),
-      ]
-    });
+    let root = commands
+      .spawn_scene(bsn! {
+        Node {
+          position_type: PositionType::Absolute,
+          bottom: margin,
+          left: SCOREBOARD_TEXT_PADDING,
+        }
+      })
+      .id();
+    commands.spawn_scene(label(txt)).insert(ChildOf(root));
   });
 
   // Scoreboard
@@ -305,10 +305,10 @@ fn setup_game(
     ScoreboardUi
     Text("Score: ")
     TextColor(TEXT_COLOR)
-    Children [(
+    Children [
       TextSpan::new("")
       TextColor(SCORE_COLOR)
-    )]
+    ]
   });
 
   // Walls

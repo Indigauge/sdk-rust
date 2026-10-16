@@ -17,7 +17,7 @@ use crate::http_runtime::{BevyReqwest, ReqwestErrorEvent, ReqwestResponseEvent};
 use indigauge_core::types::FeedbackPayload;
 
 #[cfg(feature = "feedback")]
-use bevy::ecs::{bundle::Bundle, system::IntoObserverSystem};
+use bevy::ecs::system::IntoObserverSystem;
 
 use indigauge_core::types::{IndigaugeLogLevel, IndigaugeMode};
 
@@ -74,15 +74,14 @@ impl<'w, 's> BevyIndigauge<'w, 's> {
   }
 
   #[cfg(feature = "feedback")]
-  pub(crate) fn send_feedback<RB, RM, OR>(
+  pub(crate) fn send_feedback<RM, OR>(
     &mut self,
     api_key: &str,
     payload: &FeedbackPayload,
     on_response: OR,
   ) -> Result<Option<bevy::prelude::Entity>, String>
   where
-    RB: Bundle,
-    OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>,
+    OR: IntoObserverSystem<ReqwestResponseEvent, RM>,
   {
     match **self.mode {
       IndigaugeMode::Live => match self.runtime_client().feedback(api_key, payload) {

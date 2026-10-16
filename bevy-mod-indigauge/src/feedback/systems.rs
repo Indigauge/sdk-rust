@@ -8,12 +8,16 @@ use crate::{
 use bevy::{
   input::mouse::{MouseScrollUnit, MouseWheel},
   input_focus::tab_navigation::TabIndex,
-  picking::hover::HoverMap,
+  picking::{
+    cursor::EntityCursor,
+    hover::{HoverMap, Hovered},
+  },
   prelude::*,
   text::{EditableText, TextCursorStyle},
+  ui::Pressed,
+  ui_widgets::Button,
   window::SystemCursorIcon,
 };
-use bevy_feathers::cursor::EntityCursor;
 use bevy_feathers::display::label;
 use indigauge_core::utils::select;
 
@@ -49,7 +53,8 @@ type HoverAndClickInteractionQuery<'a, 'w, 's> = Query<
   'w,
   's,
   (
-    &'a Interaction,
+    &'a Hovered,
+    Has<Pressed>,
     Entity,
     &'a mut BackgroundColor,
     &'a mut BorderColor,
@@ -59,44 +64,41 @@ type HoverAndClickInteractionQuery<'a, 'w, 's> = Query<
     Has<HoldPressed>,
     Has<Active>,
   ),
-  (Changed<Interaction>, Or<(With<ButtonHoverStyle>, With<ButtonPressedStyle>)>),
+  Or<(With<ButtonHoverStyle>, With<ButtonPressedStyle>)>,
 >;
 
 // Handle hover and click states
 /// Applies hover/pressed style transitions to feedback UI buttons.
 pub fn handle_hover_and_click_styles(mut commands: Commands, mut q: HoverAndClickInteractionQuery) {
   q.iter_mut().for_each(
-    |(interaction, entity, mut bg_color, mut border_color, bhs, bps, obs, hold_after_press, is_active)| {
-      match *interaction {
-        Interaction::Hovered => {
-          if let Ok(mut ecm) = commands.get_entity(entity) {
-            ecm.try_insert_if_new(OriginalButtonStyles {
-              background: bg_color.0,
-              border: border_color.top,
-            });
-          }
+    |(hovered, pressed, entity, mut bg_color, mut border_color, bhs, bps, obs, hold_after_press, is_active)| {
+      if obs.is_none()
+        && let Ok(mut ecm) = commands.get_entity(entity)
+      {
+        ecm.try_insert_if_new(OriginalButtonStyles {
+          background: bg_color.0,
+          border: border_color.top,
+        });
+      }
+      if pressed {
+        if let Some(pressed_style) = bps {
+          bg_color.0 = pressed_style.background;
+          *border_color = BorderColor::all(pressed_style.border);
+        }
 
-          if !is_active && let Some(hover_style) = bhs {
-            bg_color.0 = hover_style.background;
-            *border_color = BorderColor::all(hover_style.border);
-          }
-        },
-        Interaction::Pressed => {
-          if let Some(pressed_style) = bps {
-            bg_color.0 = pressed_style.background;
-            *border_color = BorderColor::all(pressed_style.border);
-          }
-
-          if hold_after_press && let Ok(mut ecm) = commands.get_entity(entity) {
-            ecm.try_insert(Active);
-          }
-        },
-        _ => {
-          if !is_active && let Some(original_styles) = obs {
-            bg_color.0 = original_styles.background;
-            *border_color = BorderColor::all(original_styles.border);
-          }
-        },
+        if hold_after_press && let Ok(mut ecm) = commands.get_entity(entity) {
+          ecm.try_insert(Active);
+        }
+      } else if hovered.get() {
+        if !is_active && let Some(hover_style) = bhs {
+          bg_color.0 = hover_style.background;
+          *border_color = BorderColor::all(hover_style.border);
+        }
+      } else {
+        if !is_active && let Some(original_styles) = obs {
+          bg_color.0 = original_styles.background;
+          *border_color = BorderColor::all(original_styles.border);
+        }
       }
     },
   );
@@ -229,7 +231,7 @@ pub fn spawn_feedback_ui(
   }
 
   if let Some(question) = panel_question {
-    let size = select(18., 22., has_title);
+    let size = select(18.0_f32, 22.0_f32, has_title);
     let color = select(style_text_secondary, style_text_primary, has_title);
 
     let question_entity = commands
@@ -400,6 +402,7 @@ pub fn spawn_feedback_ui(
       Text::new(""),
       TextFont::from_font_size(FontSize::Px(16.)),
       TextColor(style_text_primary),
+      bevy::ui_widgets::TextInput,
       EditableText {
         allow_newlines: true,
         max_characters: Some(1000),
@@ -528,6 +531,7 @@ pub fn spawn_feedback_ui(
   commands
     .entity(submit_button)
     .insert(Button)
+    .insert(Hovered::default())
     .insert(SubmitButton)
     .insert(ButtonHoverStyle {
       background: style_primary_hover,
@@ -585,4 +589,30 @@ pub fn error_sync(form: Res<FeedbackFormState>, mut q: Query<&mut Text, With<Err
     return;
   };
   **text = form.error.clone().unwrap_or_default();
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn message_field_is_registered_as_multiline_text_input() {
+    let mut app = App::new();
+    app
+      .add_plugins((MinimalPlugins, AssetPlugin::default(), bevy::scene::ScenePlugin))
+      .init_asset::<Font>()
+      .init_resource::<FeedbackPanelStyles>()
+      .init_resource::<FeedbackPanelProps>()
+      .init_resource::<FeedbackFormState>()
+      .add_systems(Startup, spawn_feedback_ui);
+    app.update();
+
+    let mut query = app
+      .world_mut()
+      .query_filtered::<(&EditableText, Has<bevy::ui_widgets::TextInput>), With<MessageInput>>();
+    let (editable, is_text_input) = query.single(app.world()).unwrap();
+    assert!(is_text_input);
+    assert!(editable.allow_newlines);
+    assert_eq!(editable.max_characters, Some(1000));
+  }
 }

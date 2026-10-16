@@ -81,19 +81,15 @@ impl<'a> BevyReqwestBuilder<'a> {
     self.0.id()
   }
 
-  pub fn on_response<RB: Bundle, RM, OR: IntoObserverSystem<ReqwestResponseEvent, RB, RM>>(
-    mut self,
-    on_response: OR,
-  ) -> Self {
+  pub fn on_response<RM, OR: IntoObserverSystem<ReqwestResponseEvent, RM>>(mut self, on_response: OR) -> Self {
     self.0.observe(on_response);
     self
   }
 
   pub fn on_json_response<
     T: std::marker::Sync + std::marker::Send + serde::de::DeserializeOwned + 'static,
-    RB: Bundle,
     RM,
-    OR: IntoObserverSystem<JsonResponse<T>, RB, RM>,
+    OR: IntoObserverSystem<JsonResponse<T>, RM>,
   >(
     mut self,
     on_response: OR,
@@ -116,7 +112,7 @@ impl<'a> BevyReqwestBuilder<'a> {
     self
   }
 
-  pub fn on_error<EB: Bundle, EM, OE: IntoObserverSystem<ReqwestErrorEvent, EB, EM>>(mut self, on_error: OE) -> Self {
+  pub fn on_error<EM, OE: IntoObserverSystem<ReqwestErrorEvent, EM>>(mut self, on_error: OE) -> Self {
     self.0.observe(on_error);
     self
   }

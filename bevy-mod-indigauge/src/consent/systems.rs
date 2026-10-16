@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 
+#[cfg(feature = "consent")]
+use bevy::{picking::hover::Hovered, ui::Pressed, ui_widgets::Button};
+
 #[cfg(not(target_family = "wasm"))]
 use std::fs;
 
@@ -24,20 +27,12 @@ use crate::consent::{
 };
 
 #[cfg(feature = "consent")]
-type AcceptConsentInteractionQuery<'w, 's> = Query<
-  'w,
-  's,
-  (&'static Interaction, &'static mut BackgroundColor),
-  (With<AcceptConsentButton>, Changed<Interaction>),
->;
+type AcceptConsentInteractionQuery<'w, 's> =
+  Query<'w, 's, (&'static Hovered, Has<Pressed>, &'static mut BackgroundColor), With<AcceptConsentButton>>;
 
 #[cfg(feature = "consent")]
-type DeclineConsentInteractionQuery<'w, 's> = Query<
-  'w,
-  's,
-  (&'static Interaction, &'static mut BackgroundColor),
-  (With<DeclineConsentButton>, Changed<Interaction>),
->;
+type DeclineConsentInteractionQuery<'w, 's> =
+  Query<'w, 's, (&'static Hovered, Has<Pressed>, &'static mut BackgroundColor), With<DeclineConsentButton>>;
 
 /// Loads persisted telemetry consent from the user's preference folder.
 #[cfg(not(target_family = "wasm"))]
@@ -217,6 +212,7 @@ pub fn spawn_consent_modal_ui(
         ..default()
       },
       Button,
+      Hovered::default(),
       DeclineConsentButton,
       BackgroundColor(styles.decline_button),
       BorderColor::all(styles.border),
@@ -239,6 +235,7 @@ pub fn spawn_consent_modal_ui(
         ..default()
       },
       Button,
+      Hovered::default(),
       AcceptConsentButton,
       BackgroundColor(styles.accept_button),
       BorderColor::all(styles.border),
@@ -277,15 +274,16 @@ pub fn observe_accept_consent_click(
   mut consent_state: ResMut<IndigaugeConsentState>,
   mut query: AcceptConsentInteractionQuery,
 ) {
-  for (interaction, mut background) in &mut query {
-    match *interaction {
-      Interaction::Hovered => background.0 = styles.accept_button_hover,
-      Interaction::None => background.0 = styles.accept_button,
-      Interaction::Pressed => {
-        consent_state.choice = IndigaugeConsentChoice::Accepted;
-        consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
-        commands.remove_resource::<ConsentModalProps>();
-      },
+  for (hovered, pressed, mut background) in &mut query {
+    background.0 = if hovered.get() {
+      styles.accept_button_hover
+    } else {
+      styles.accept_button
+    };
+    if pressed {
+      consent_state.choice = IndigaugeConsentChoice::Accepted;
+      consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
+      commands.remove_resource::<ConsentModalProps>();
     }
   }
 }
@@ -299,15 +297,81 @@ pub fn observe_decline_consent_click(
   mut consent_state: ResMut<IndigaugeConsentState>,
   mut query: DeclineConsentInteractionQuery,
 ) {
-  for (interaction, mut background) in &mut query {
-    match *interaction {
-      Interaction::Hovered => background.0 = styles.decline_button_hover,
-      Interaction::None => background.0 = styles.decline_button,
-      Interaction::Pressed => {
-        consent_state.choice = IndigaugeConsentChoice::Declined;
-        consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
-        commands.remove_resource::<ConsentModalProps>();
-      },
+  for (hovered, pressed, mut background) in &mut query {
+    background.0 = if hovered.get() {
+      styles.decline_button_hover
+    } else {
+      styles.decline_button
+    };
+    if pressed {
+      consent_state.choice = IndigaugeConsentChoice::Declined;
+      consent_state.persist_to_disk = props.as_ref().is_none_or(|p| p.persist_choice);
+      commands.remove_resource::<ConsentModalProps>();
     }
+  }
+}
+
+#[cfg(all(test, feature = "consent"))]
+mod tests {
+  use super::*;
+
+  fn consent_app() -> App {
+    let mut app = App::new();
+    app
+      .init_resource::<ConsentModalStyles>()
+      .init_resource::<IndigaugeConsentState>()
+      .insert_resource(ConsentModalProps {
+        persist_choice: false,
+        ..default()
+      })
+      .add_systems(Update, (observe_accept_consent_click, observe_decline_consent_click));
+    app
+  }
+
+  #[test]
+  fn consent_hover_style_resets_when_pointer_leaves() {
+    let mut app = consent_app();
+    let button = app
+      .world_mut()
+      .spawn((AcceptConsentButton, Hovered(true), BackgroundColor::default()))
+      .id();
+    app.update();
+    assert_eq!(
+      app.world().get::<BackgroundColor>(button).unwrap().0,
+      app.world().resource::<ConsentModalStyles>().accept_button_hover,
+    );
+    app.world_mut().entity_mut(button).insert(Hovered(false));
+    app.update();
+    assert_eq!(
+      app.world().get::<BackgroundColor>(button).unwrap().0,
+      app.world().resource::<ConsentModalStyles>().accept_button,
+    );
+    assert_eq!(app.world().resource::<IndigaugeConsentState>().choice, IndigaugeConsentChoice::Unknown);
+  }
+
+  #[test]
+  fn pressed_accept_button_selects_consent() {
+    let mut app = consent_app();
+    app
+      .world_mut()
+      .spawn((AcceptConsentButton, Hovered(true), Pressed, BackgroundColor::default()));
+    app.update();
+    let state = app.world().resource::<IndigaugeConsentState>();
+    assert_eq!(state.choice, IndigaugeConsentChoice::Accepted);
+    assert!(!state.persist_to_disk);
+    assert!(!app.world().contains_resource::<ConsentModalProps>());
+  }
+
+  #[test]
+  fn pressed_decline_button_selects_consent() {
+    let mut app = consent_app();
+    app
+      .world_mut()
+      .spawn((DeclineConsentButton, Hovered(true), Pressed, BackgroundColor::default()));
+    app.update();
+    let state = app.world().resource::<IndigaugeConsentState>();
+    assert_eq!(state.choice, IndigaugeConsentChoice::Declined);
+    assert!(!state.persist_to_disk);
+    assert!(!app.world().contains_resource::<ConsentModalProps>());
   }
 }

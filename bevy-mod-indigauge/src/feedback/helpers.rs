@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, ui_widgets::Button};
 
 use crate::feedback::components::{ButtonHoverStyle, ButtonPressedStyle};
 
@@ -11,6 +12,7 @@ pub fn panel(background_color: Color, border_color: Color) -> impl Bundle {
 pub fn button(background_color: Color, border_color: Color) -> impl Bundle {
   (
     Button,
+    Hovered::default(),
     BackgroundColor(background_color),
     BorderColor::all(border_color),
     ButtonHoverStyle {

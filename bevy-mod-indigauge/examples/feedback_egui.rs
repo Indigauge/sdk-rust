@@ -31,27 +31,34 @@ fn main() {
 fn setup(mut commands: Commands) {
   commands.spawn((Camera2d, IsDefaultUiCamera));
 
-  commands.spawn_scene(bsn! {
-    Node {
-      width: Val::Percent(100.0),
-      height: Val::Percent(100.0),
-      justify_content: JustifyContent::Center,
-      align_items: AlignItems::Center,
-    }
-    Children [(
+  let root = commands
+    .spawn_scene(bsn! {
       Node {
-        flex_direction: FlexDirection::Column,
-        row_gap: Val::Px(8.0),
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
       }
-      Children [
-        (label("bevy_egui feedback panel example")),
-        (label("Consent modal is shown before session start")),
-        (label("Press F2 for default panel")),
-        (label("Press F3 for a bug report question panel")),
-        (label("Press SPACE for a gameplay question panel")),
-      ]
-    )]
-  });
+    })
+    .id();
+  let content = commands
+    .spawn_scene(bsn! {
+        ChildOf(root)
+        Node {
+          flex_direction: FlexDirection::Column,
+          row_gap: Val::Px(8.0),
+        }
+    })
+    .id();
+  for text in [
+    "bevy_egui feedback panel example",
+    "Consent modal is shown before session start",
+    "Press F2 for default panel",
+    "Press F3 for a bug report question panel",
+    "Press SPACE for a gameplay question panel",
+  ] {
+    commands.spawn_scene(label(text)).insert(ChildOf(content));
+  }
 }
 
 fn setup_consent_modal(
