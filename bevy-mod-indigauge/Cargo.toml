@@ -49,7 +49,7 @@ feedback_egui = [
 ]
 
 [dependencies]
-bevy = { version = "0.19", default-features = false, features = [
+bevy = { version = "0.20", default-features = false, features = [
   "std",
   "async_executor",
   "bevy_window",
@@ -82,7 +82,7 @@ dirs = "7.0"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 
 [dev-dependencies]
-bevy = { version = "0.19" }
+bevy = { version = "0.20" }
 tracing = { version = "0.1" }
 winit = { version = "0.30", features = ["x11"] }
 
