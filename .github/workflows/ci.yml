@@ -15,7 +15,7 @@ name: Continuous Integration
 env:
   RUSTFLAGS: "-Dwarnings"
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN_VERSION: 1.96.0
+  RUST_TOOLCHAIN_VERSION: 1.97.1
 
 jobs:
   linux_ci:

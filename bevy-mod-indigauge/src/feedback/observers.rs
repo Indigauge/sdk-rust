@@ -26,7 +26,7 @@ use bevy::text::EditableText;
 use indigauge_core::utils::select;
 
 /// Returns an observer that advances a state when feedback panel spawns.
-pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(On<Add, FeedbackPanel>, ResMut<NextState<S>>)
+pub fn switch_state_on_feedback_spawn<S>(state: S) -> impl FnMut(On<Add<FeedbackPanel>>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
 {
@@ -36,7 +36,7 @@ where
 }
 
 /// Returns an observer that advances a state when feedback panel despawns.
-pub fn switch_state_on_feedback_despawn<S>(state: S) -> impl FnMut(On<Remove, FeedbackPanel>, ResMut<NextState<S>>)
+pub fn switch_state_on_feedback_despawn<S>(state: S) -> impl FnMut(On<Remove<FeedbackPanel>>, ResMut<NextState<S>>)
 where
   S: FreelyMutableState + Copy,
 {
@@ -48,7 +48,7 @@ where
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Toggles category dropdown open/closed state.
 pub fn observe_category_dropdown_click(
-  _trigger: On<Pointer<Click>>,
+  _trigger: On<PointerClick>,
   mut ui_state: ResMut<crate::feedback::resources::FeedbackUiState>,
 ) {
   ui_state.dropdown_open = !ui_state.dropdown_open;
@@ -57,7 +57,7 @@ pub fn observe_category_dropdown_click(
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Updates selected category from dropdown item interactions.
 pub fn observe_category_item_click(
-  trigger: On<Pointer<Click>>,
+  trigger: On<PointerClick>,
   mut form: ResMut<FeedbackFormState>,
   category_item_query: Query<&CategoryItem>,
   mut q_btn_text_root: Query<&mut TextSpan, With<CategoryButtonText>>,
@@ -79,7 +79,7 @@ pub fn observe_category_item_click(
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer toggling screenshot inclusion for feedback submissions.
 pub fn observe_screenshot_toggle_click(
-  trigger: On<Pointer<Click>>,
+  trigger: On<PointerClick>,
   styles: Res<FeedbackPanelStyles>,
   mut form: ResMut<FeedbackFormState>,
   mut q: Query<&mut BackgroundColor>,
@@ -101,14 +101,14 @@ pub fn observe_screenshot_toggle_click(
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer that closes the feedback panel.
-pub fn observe_cancel_click(_trigger: On<Pointer<Click>>, mut commands: Commands) {
+pub fn observe_cancel_click(_trigger: On<PointerClick>, mut commands: Commands) {
   commands.remove_resource::<FeedbackPanelProps>();
 }
 
 #[cfg(all(feature = "feedback", not(feature = "feedback_egui")))]
 /// Observer that reads form values and submits feedback.
 pub fn observe_submit_click(
-  _trigger: On<Pointer<Click>>,
+  _trigger: On<PointerClick>,
   mut commands: Commands,
   q_input: Query<&EditableText, With<MessageInput>>,
   mut form: ResMut<FeedbackFormState>,

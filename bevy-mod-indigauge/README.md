@@ -8,7 +8,7 @@ It’s designed to be easy to integrate and is powerful enough for production us
 
 ## Features
 
-- **Bevy 0.19 compatible** — easy drop-in plugin
+- **Bevy 0.20 compatible** — easy drop-in plugin
 - Lightweight event macros: `ig_info!`, `ig_warn!`, `ig_error!`, …
 - Built-in **Feedback UI panel** for in-game bug reports & suggestions
 - Works on both **native** and **WASM** builds*
@@ -23,11 +23,13 @@ It’s designed to be easy to integrate and is powerful enough for production us
 
 ```toml
 [dependencies]
-bevy = "0.19"
+bevy = "0.20"
 bevy-mod-indigauge = { version = "0.7" }
 ```
 
 ### Feature flags
+
+Bevy 0.20 requires Rust 1.97.1 or newer.
 
 - `consent` (default): telemetry consent state + consent modal UI.
 - `feedback` (default): feedback panel rendered with Bevy UI + picking.
@@ -265,7 +267,7 @@ Send events to the Indigauge API through tracing. This is useful for debugging a
 
 ```toml
 [dependencies]
-bevy = { version = "0.19" }
+bevy = { version = "0.20" }
 bevy-mod-indigauge = { version = "0.7", features = ["tracing"] }
 ```
 
@@ -318,6 +320,7 @@ fn track_counter(mut counter: Local<u32>) {
 
 | bevy   | bevy-mod-indigauge |
 | ------ | ------------------ |
+| 0.20   | 0.8                |
 | 0.19   | 0.7                |
 | 0.18   | 0.6                |
 | 0.17   | 0.5                |

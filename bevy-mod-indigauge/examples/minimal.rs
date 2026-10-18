@@ -72,17 +72,17 @@ fn setup(mut commands: Commands) {
   const HELP_TEXT_WITH_QUESTION: &str = "Press 'SPACE' to display the feedback panel with a question!\n";
   const HELP_TEXT_WITH_CONSENT: &str = "Consent modal is shown before session start.\n";
 
-  commands.spawn_scene(bsn! {
-    Node {
-      flex_direction: FlexDirection::Column,
-      row_gap: Val::Px(8.0),
-    }
-    Children [
-      (label(HELP_TEXT_WITH_CONSENT)),
-      (label(HELP_TEXT_DEFAULT)),
-      (label(HELP_TEXT_WITH_QUESTION)),
-    ]
-  });
+  let root = commands
+    .spawn_scene(bsn! {
+      Node {
+        flex_direction: FlexDirection::Column,
+        row_gap: Val::Px(8.0),
+      }
+    })
+    .id();
+  for text in [HELP_TEXT_WITH_CONSENT, HELP_TEXT_DEFAULT, HELP_TEXT_WITH_QUESTION] {
+    commands.spawn_scene(label(text)).insert(ChildOf(root));
+  }
 }
 
 fn setup_consent_modal(

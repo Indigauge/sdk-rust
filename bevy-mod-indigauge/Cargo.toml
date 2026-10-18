@@ -45,11 +45,12 @@ feedback = [
 ]
 feedback_egui = [
   "feedback",
+  "bevy/custom_cursor",
   "bevy_egui"
 ]
 
 [dependencies]
-bevy = { version = "0.19", default-features = false, features = [
+bevy = { version = "0.20", default-features = false, features = [
   "std",
   "async_executor",
   "bevy_window",
@@ -66,8 +67,8 @@ crossbeam-channel = "0.5"
 anyhow = "1"
 bytes = "1"
 futures-lite = "2"
-bevy_egui = { version = "0.42", optional = true }
-bevy_feathers = { version = "0.19", optional = true }
+bevy_egui = { version = "0.43.1", optional = true }
+bevy_feathers = { version = "0.20", optional = true }
 image = { version = "0.25", optional = true }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 
@@ -82,7 +83,7 @@ dirs = "7.0"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 
 [dev-dependencies]
-bevy = { version = "0.19" }
+bevy = { version = "0.20" }
 tracing = { version = "0.1" }
 winit = { version = "0.30", features = ["x11"] }
 
