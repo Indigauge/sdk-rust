@@ -143,24 +143,32 @@ pub fn spawn_consent_modal_ui(
     commands.entity(existing_modal).despawn();
   }
 
-  let root = commands
-    .spawn((
+  let align_items = props.spawn_position.align_items();
+  let justify_content = props.spawn_position.justify_content();
+  let margin = props.position_margin;
+  let title = props.title.clone();
+  let message = props.message.clone();
+  let decline_button_text = props.decline_button_text.clone();
+  let accept_button_text = props.accept_button_text.clone();
+  let overlay = styles.overlay;
+  let background = styles.background;
+  let border = styles.border;
+  let text_primary = styles.text_primary;
+  let text_secondary = styles.text_secondary;
+  let decline_button = styles.decline_button;
+  let accept_button = styles.accept_button;
+
+  commands.spawn_scene(bsn! {
+      ConsentModal
       Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
-        align_items: props.spawn_position.align_items(),
-        justify_content: props.spawn_position.justify_content(),
-        margin: props.position_margin,
-        ..default()
-      },
-      BackgroundColor(styles.overlay),
-      ConsentModal,
-    ))
-    .id();
-
-  let panel = commands
-    .spawn((
-      ChildOf(root),
+        align_items: align_items,
+        justify_content: justify_content,
+        margin: margin,
+      }
+      BackgroundColor(overlay)
+      Children [
       Node {
         width: Val::Px(500.0),
         max_width: Val::Percent(95.0),
@@ -169,84 +177,67 @@ pub fn spawn_consent_modal_ui(
         row_gap: Val::Px(14.0),
         flex_direction: FlexDirection::Column,
         border_radius: BorderRadius::all(Val::Px(10.0)),
-        ..default()
-      },
-      BackgroundColor(styles.background),
-      BorderColor::all(styles.border),
-    ))
-    .id();
-
-  commands.spawn((
-    ChildOf(panel),
-    Text::new(props.title.clone()),
-    TextFont::from_font_size(FontSize::Px(22.0)),
-    TextColor(styles.text_primary),
-  ));
-
-  commands.spawn((
-    ChildOf(panel),
-    Text::new(props.message.clone()),
-    TextFont::from_font_size(FontSize::Px(16.0)),
-    TextColor(styles.text_secondary),
-  ));
-
-  let actions = commands
-    .spawn((
-      ChildOf(panel),
+      }
+      BackgroundColor(background)
+      BorderColor::all(border)
+      Children [
+        Text::new(title)
+        TextFont {
+          font_size: FontSize::Px(22.0),
+        }
+        TextColor(text_primary)
+        --
+        Text::new(message)
+        TextFont {
+          font_size: FontSize::Px(16.0),
+        }
+        TextColor(text_secondary)
+        --
       Node {
         width: Val::Percent(100.0),
         justify_content: JustifyContent::End,
         column_gap: Val::Px(10.0),
-        ..default()
-      },
-    ))
-    .id();
-
-  let decline = commands
-    .spawn((
-      ChildOf(actions),
+      }
+      Children [
       Node {
         border: UiRect::all(Val::Px(2.0)),
         padding: UiRect::axes(Val::Px(16.0), Val::Px(8.0)),
         border_radius: BorderRadius::all(Val::Px(8.0)),
-        ..default()
-      },
-      Button,
-      Hovered::default(),
-      DeclineConsentButton,
-      BackgroundColor(styles.decline_button),
-      BorderColor::all(styles.border),
-    ))
-    .id();
-  commands.spawn((
-    ChildOf(decline),
-    Text::new(props.decline_button_text.clone()),
-    TextFont::from_font_size(FontSize::Px(15.0)),
-    TextColor(styles.text_primary),
-  ));
-
-  let accept = commands
-    .spawn((
-      ChildOf(actions),
+      }
+      Button
+      Hovered::default()
+      DeclineConsentButton
+      BackgroundColor(decline_button)
+      BorderColor::all(border)
+      Children [
+        Text::new(decline_button_text)
+        TextFont {
+          font_size: FontSize::Px(15.0),
+        }
+        TextColor(text_primary)
+      ]
+      --
       Node {
         border: UiRect::all(Val::Px(2.0)),
         padding: UiRect::axes(Val::Px(16.0), Val::Px(8.0)),
         border_radius: BorderRadius::all(Val::Px(8.0)),
-        ..default()
-      },
-      Button,
-      Hovered::default(),
-      AcceptConsentButton,
-      BackgroundColor(styles.accept_button),
-      BorderColor::all(styles.border),
-    ))
-    .id();
-  commands.spawn((
-    ChildOf(accept),
-    Text::new(props.accept_button_text.clone()),
-    TextFont::from_font_size(FontSize::Px(15.0)),
-    TextColor(styles.text_primary),
-  ));
+      }
+      Button
+      Hovered::default()
+      AcceptConsentButton
+      BackgroundColor(accept_button)
+      BorderColor::all(border)
+      Children [
+        Text::new(accept_button_text)
+        TextFont {
+          font_size: FontSize::Px(15.0),
+        }
+        TextColor(text_primary)
+      ]
+      ]
+      ]
+      ]
+  });
 }
 
 #[cfg(feature = "consent")]
@@ -326,6 +317,43 @@ mod tests {
       })
       .add_systems(Update, (observe_accept_consent_click, observe_decline_consent_click));
     app
+  }
+
+  #[test]
+  fn consent_scene_spawns_custom_labels_and_functional_buttons() {
+    let mut app = consent_app();
+    app
+      .add_plugins((MinimalPlugins, AssetPlugin::default(), bevy::scene::ScenePlugin))
+      .init_asset::<Font>()
+      .insert_resource(ConsentModalProps {
+        title: "Telemetry consent".to_string(),
+        message: "Share anonymous usage data?".to_string(),
+        accept_button_text: "Allow".to_string(),
+        decline_button_text: "Decline".to_string(),
+        persist_choice: false,
+        ..default()
+      })
+      .add_systems(Startup, spawn_consent_modal_ui);
+    app.update();
+
+    let mut roots = app.world_mut().query_filtered::<Entity, With<ConsentModal>>();
+    let root = roots.single(app.world()).unwrap();
+    let mut labels = app.world_mut().query::<&Text>();
+    let text: Vec<_> = labels.iter(app.world()).map(|label| label.0.as_str()).collect();
+    assert_eq!(text, ["Telemetry consent", "Share anonymous usage data?", "Decline", "Allow"]);
+    let mut buttons = app
+      .world_mut()
+      .query_filtered::<Entity, (With<Button>, With<Hovered>)>();
+    assert_eq!(buttons.iter(app.world()).count(), 2);
+    let mut accept = app.world_mut().query_filtered::<Entity, With<AcceptConsentButton>>();
+    let accept = accept.single(app.world()).unwrap();
+    app.world_mut().entity_mut(accept).insert(Pressed);
+    app.update();
+    assert_eq!(app.world().resource::<IndigaugeConsentState>().choice, IndigaugeConsentChoice::Accepted);
+    app.add_systems(Update, despawn_consent_modal_ui);
+    app.update();
+    assert!(app.world().get_entity(root).is_err());
+    assert!(app.world().get_entity(accept).is_err());
   }
 
   #[test]

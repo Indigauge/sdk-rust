@@ -180,6 +180,7 @@ pub fn spawn_feedback_ui(
 
   let root_entity = commands
     .spawn_scene(bsn! {
+      FeedbackPanel
       Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
@@ -189,11 +190,12 @@ pub fn spawn_feedback_ui(
       BackgroundColor(Color::NONE)
     })
     .id();
-  commands.entity(root_entity).insert(FeedbackPanel);
 
   let panel_entity = commands
     .spawn_scene(bsn! {
       ChildOf(root_entity)
+      FeedbackPanelBody
+      @panel(style_background, style_border)
       Node {
         width: Val::Px(420.0),
         min_height: Val::Px(420.0),
@@ -206,27 +208,19 @@ pub fn spawn_feedback_ui(
       }
     })
     .id();
-  commands
-    .entity(panel_entity)
-    .insert(FeedbackPanelBody)
-    .insert(panel(style_background, style_border));
 
   if let Some(title) = panel_title {
-    let title_root = commands
-      .spawn_scene(bsn! {
-        ChildOf(panel_entity)
-        Text::default()
-        Node::default()
-      })
-      .id();
-
     commands.spawn_scene(bsn! {
-      ChildOf(title_root)
-      TextSpan::new(title)
-      TextFont {
-        font_size: FontSize::Px(22.),
-      }
-      TextColor(style_text_primary)
+      ChildOf(panel_entity)
+      Text::default()
+      Node::default()
+      Children [
+        TextSpan::new(title)
+        TextFont {
+          font_size: FontSize::Px(22.),
+        }
+        TextColor(style_text_primary)
+      ]
     });
   }
 
@@ -234,76 +228,57 @@ pub fn spawn_feedback_ui(
     let size = select(18.0_f32, 22.0_f32, has_title);
     let color = select(style_text_secondary, style_text_primary, has_title);
 
-    let question_entity = commands
-      .spawn_scene(bsn! {
-        ChildOf(panel_entity)
-        Text::new(question)
-        TextFont {
-          font_size: FontSize::Px(size),
-        }
-        TextColor({color})
-      })
-      .id();
-    commands.entity(question_entity).insert(QuestionTextRoot);
+    commands.spawn_scene(bsn! {
+      ChildOf(panel_entity)
+      QuestionTextRoot
+      Text::new(question)
+      TextFont {
+        font_size: FontSize::Px(size),
+      }
+      TextColor({color})
+    });
   } else {
-    let category_row = commands
-      .spawn_scene(bsn! {
-        ChildOf(panel_entity)
-        Node {
-          width: Val::Percent(100.0),
-          height: Val::Auto,
-          justify_content: JustifyContent::SpaceBetween,
-          align_items: AlignItems::Center,
-        }
-        BackgroundColor(Color::NONE)
-      })
-      .id();
-
-    let category_button = commands
-      .spawn_scene(bsn! {
-        ChildOf(category_row)
-        Node {
-          width: Val::Percent(100.0),
-          border: UiRect::all(Val::Px(3.0)),
-          padding: UiRect::axes(Val::Px(10.0), Val::Px(6.0)),
-          border_radius: BorderRadius::all(Val::Px(8.0)),
-        }
-      })
-      .id();
-    commands
-      .entity(category_button)
-      .insert(CategoryButton)
-      .insert(button(style_surface, style_border))
-      .observe(observe_category_dropdown_click);
-
-    let category_label = commands.spawn_scene(label("Category: ")).id();
-    commands
-      .entity(category_label)
-      .insert(ChildOf(category_button))
-      .insert(TextColor(style_text_primary));
-
-    let category_text_root = commands
-      .spawn_scene(bsn! {
-        ChildOf(category_button)
+    commands.spawn_scene(bsn! {
+      ChildOf(panel_entity)
+      Node {
+        width: Val::Percent(100.0),
+        height: Val::Auto,
+        justify_content: JustifyContent::SpaceBetween,
+        align_items: AlignItems::Center,
+      }
+      BackgroundColor(Color::NONE)
+      Children [
+      CategoryButton
+      @button(style_surface, style_border)
+      on(observe_category_dropdown_click)
+      Node {
+        width: Val::Percent(100.0),
+        border: UiRect::all(Val::Px(3.0)),
+        padding: UiRect::axes(Val::Px(10.0), Val::Px(6.0)),
+        border_radius: BorderRadius::all(Val::Px(8.0)),
+      }
+      Children [
+        @label("Category: ")
+        TextColor(style_text_primary)
+        --
         Text::default()
         Node::default()
-      })
-      .id();
-    let category_text = commands
-      .spawn_scene(bsn! {
-        ChildOf(category_text_root)
-        TextSpan::new(FeedbackCategory::General.label().to_string())
-        TextFont {
-          font_size: FontSize::Px(16.),
-        }
-        TextColor(style_text_primary)
-      })
-      .id();
-    commands.entity(category_text).insert(CategoryButtonText);
+        Children [
+          CategoryButtonText
+          TextSpan::new(FeedbackCategory::General.label().to_string())
+          TextFont {
+            font_size: FontSize::Px(16.),
+          }
+          TextColor(style_text_primary)
+        ]
+      ]
+      ]
+    });
 
     let category_list = commands
       .spawn_scene(bsn! {
         ChildOf(panel_entity)
+        CategoryList
         Node {
           width: Val::Px(318.0),
           flex_direction: FlexDirection::Row,
@@ -323,231 +298,170 @@ pub fn spawn_feedback_ui(
         ZIndex(10)
       })
       .id();
-    commands.entity(category_list).insert(CategoryList);
 
     for cat in FeedbackCategory::ALL {
-      let item = commands
-        .spawn_scene(bsn! {
-          ChildOf(category_list)
-          Node {
-            width: Val::Percent(48.0),
-            border: UiRect::all(Val::Px(1.0)),
-            padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
-            justify_content: JustifyContent::Center,
-            border_radius: BorderRadius::all(Val::Px(8.0)),
-          }
-        })
-        .id();
-      commands
-        .entity(item)
-        .insert(CategoryItem(*cat))
-        .insert(button(style_surface, style_border))
-        .observe(observe_category_item_click);
-
-      let item_text_root = commands
-        .spawn_scene(bsn! {
-          ChildOf(item)
+      commands.spawn_scene(bsn! {
+        ChildOf(category_list)
+        CategoryItem({*cat})
+        @button(style_surface, style_border)
+        on(observe_category_item_click)
+        Node {
+          width: Val::Percent(48.0),
+          border: UiRect::all(Val::Px(1.0)),
+          padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
+          justify_content: JustifyContent::Center,
+          border_radius: BorderRadius::all(Val::Px(8.0)),
+        }
+        Children [
           Text::default()
           Node::default()
-        })
-        .id();
-
-      commands.spawn_scene(bsn! {
-        ChildOf(item_text_root)
-        TextSpan::new(cat.label().to_string())
-        TextFont {
-          font_size: FontSize::Px(14.),
-        }
-        TextColor(style_text_primary)
+          Children [
+            TextSpan::new(cat.label().to_string())
+            TextFont {
+              font_size: FontSize::Px(14.),
+            }
+            TextColor(style_text_primary)
+          ]
+        ]
       });
     }
   }
 
-  let message_area = commands
-    .spawn_scene(bsn! {
-      ChildOf(panel_entity)
-      Node {
-        width: Val::Percent(100.0),
-        min_height: Val::Px(180.0),
-        border_radius: BorderRadius::all(Val::Px(8.0)),
-      }
-    })
-    .id();
-
-  let message_root = commands
-    .spawn_scene(bsn! {
-      ChildOf(message_area)
-      Node {
-        width: Val::Percent(100.0),
-        border: UiRect::all(Val::Px(2.0)),
-        overflow: Overflow::scroll_y(),
-        padding: UiRect::all(Val::Px(10.0)),
-        border_radius: BorderRadius::all(Val::Px(8.0)),
-      }
-    })
-    .id();
-  commands
-    .entity(message_root)
-    .insert(MessageInputRoot)
-    .insert(panel(style_surface, style_border));
-
-  let message_input = commands
-    .spawn((
-      ChildOf(message_root),
-      Node {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        ..default()
-      },
-      Text::new(""),
-      TextFont::from_font_size(FontSize::Px(16.)),
-      TextColor(style_text_primary),
-      bevy::ui_widgets::TextInput,
-      EditableText {
-        allow_newlines: true,
-        max_characters: Some(1000),
-        ..Default::default()
-      },
-      TabIndex(0),
-      EntityCursor::System(SystemCursorIcon::Text),
-      TextCursorStyle::default(),
-    ))
-    .id();
-  commands.entity(message_input).insert(MessageInput);
+  commands.spawn_scene(bsn! {
+    ChildOf(panel_entity)
+    Node {
+      width: Val::Percent(100.0),
+      min_height: Val::Px(180.0),
+      border_radius: BorderRadius::all(Val::Px(8.0)),
+    }
+    Children [
+    MessageInputRoot
+    @panel(style_surface, style_border)
+    Node {
+      width: Val::Percent(100.0),
+      border: UiRect::all(Val::Px(2.0)),
+      overflow: Overflow::scroll_y(),
+      padding: UiRect::all(Val::Px(10.0)),
+      border_radius: BorderRadius::all(Val::Px(8.0)),
+    }
+    Children [
+    MessageInput
+    Node {
+      width: Val::Percent(100.0),
+      height: Val::Percent(100.0),
+    }
+    Text::new("")
+    TextFont {
+      font_size: FontSize::Px(16.),
+    }
+    TextColor(style_text_primary)
+    bevy::ui_widgets::TextInput
+    EditableText {
+      allow_newlines: true,
+      max_characters: {Some(1000)},
+    }
+    TabIndex(0)
+    EntityCursor::System(SystemCursorIcon::Text)
+    TextCursorStyle::default()
+    ]
+    ]
+  });
 
   if allow_screenshot {
-    let screenshot_row = commands
-      .spawn_scene(bsn! {
-        ChildOf(panel_entity)
-        Node {
-          width: Val::Percent(100.0),
-          justify_content: JustifyContent::SpaceBetween,
-          align_items: AlignItems::Center,
-        }
-        BackgroundColor(Color::NONE)
-      })
-      .id();
-
-    let screenshot_toggle = commands
-      .spawn_scene(bsn! {
-        ChildOf(screenshot_row)
-        Node {
-          border: UiRect::all(Val::Px(2.0)),
-          padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
-          border_radius: BorderRadius::all(Val::Px(8.0)),
-        }
-      })
-      .id();
-    commands
-      .entity(screenshot_toggle)
-      .insert(ScreenshotToggle)
-      .insert(button(style_surface, style_border))
-      .observe(observe_screenshot_toggle_click);
-
-    let screenshot_label = commands.spawn_scene(label("Include screenshot: ")).id();
-    commands
-      .entity(screenshot_label)
-      .insert(ChildOf(screenshot_toggle))
-      .insert(TextColor(style_text_secondary));
-
-    let screenshot_text_root = commands
-      .spawn_scene(bsn! {
-        ChildOf(screenshot_toggle)
-        Text::default()
-        Node::default()
-      })
-      .id();
-
-    let screenshot_text = commands
-      .spawn_scene(bsn! {
-        ChildOf(screenshot_text_root)
-        TextSpan::new("No")
-        TextFont {
-          font_size: FontSize::Px(14.),
-        }
-        TextColor(style_secondary)
-      })
-      .id();
-    commands.entity(screenshot_text).insert(ScreenshotToggleText);
-  }
-
-  let error_entity = commands
-    .spawn_scene(bsn! {
-      ChildOf(panel_entity)
-      Text::new("")
-      TextFont {
-        font_size: FontSize::Px(13.),
-      }
-      TextColor(style_error)
-    })
-    .id();
-  commands.entity(error_entity).insert(ErrorText);
-
-  let actions_row = commands
-    .spawn_scene(bsn! {
+    commands.spawn_scene(bsn! {
       ChildOf(panel_entity)
       Node {
         width: Val::Percent(100.0),
-        justify_content: JustifyContent::SpaceAround,
+        justify_content: JustifyContent::SpaceBetween,
         align_items: AlignItems::Center,
-        column_gap: Val::Px(8.0),
-        margin: UiRect::top(Val::Px(15.)),
       }
       BackgroundColor(Color::NONE)
-    })
-    .id();
-
-  let cancel_button = commands
-    .spawn_scene(bsn! {
-      ChildOf(actions_row)
+      Children [
+      ScreenshotToggle
+      @button(style_surface, style_border)
+      on(observe_screenshot_toggle_click)
       Node {
         border: UiRect::all(Val::Px(2.0)),
-        padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+        padding: UiRect::axes(Val::Px(8.0), Val::Px(6.0)),
         border_radius: BorderRadius::all(Val::Px(8.0)),
       }
-    })
-    .id();
-  commands
-    .entity(cancel_button)
-    .insert(CancelButton)
-    .insert(button(style_surface, style_border))
-    .observe(observe_cancel_click);
-  let cancel_label = commands.spawn_scene(label("Cancel")).id();
-  commands
-    .entity(cancel_label)
-    .insert(ChildOf(cancel_button))
-    .insert(TextColor(style_text_secondary));
+      Children [
+        @label("Include screenshot: ")
+        TextColor(style_text_secondary)
+        --
+        Text::default()
+        Node::default()
+        Children [
+          ScreenshotToggleText
+          TextSpan::new("No")
+          TextFont {
+            font_size: FontSize::Px(14.),
+          }
+          TextColor(style_secondary)
+        ]
+      ]
+      ]
+    });
+  }
 
-  let submit_button = commands
-    .spawn_scene(bsn! {
-      ChildOf(actions_row)
-      Node {
-        border: UiRect::all(Val::Px(2.0)),
-        padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
-        border_radius: BorderRadius::all(Val::Px(8.0)),
-      }
-    })
-    .id();
-  commands
-    .entity(submit_button)
-    .insert(Button)
-    .insert(Hovered::default())
-    .insert(SubmitButton)
-    .insert(ButtonHoverStyle {
+  commands.spawn_scene(bsn! {
+    ChildOf(panel_entity)
+    ErrorText
+    Text::new("")
+    TextFont {
+      font_size: FontSize::Px(13.),
+    }
+    TextColor(style_error)
+  });
+
+  commands.spawn_scene(bsn! {
+    ChildOf(panel_entity)
+    Node {
+      width: Val::Percent(100.0),
+      justify_content: JustifyContent::SpaceAround,
+      align_items: AlignItems::Center,
+      column_gap: Val::Px(8.0),
+      margin: UiRect::top(Val::Px(15.)),
+    }
+    BackgroundColor(Color::NONE)
+    Children [
+    CancelButton
+    @button(style_surface, style_border)
+    on(observe_cancel_click)
+    Node {
+      border: UiRect::all(Val::Px(2.0)),
+      padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+      border_radius: BorderRadius::all(Val::Px(8.0)),
+    }
+    Children [
+      @label("Cancel")
+      TextColor(style_text_secondary)
+    ]
+    --
+    SubmitButton
+    Button
+    Hovered::default()
+    ButtonHoverStyle {
       background: style_primary_hover,
-      border: style_border.with_alpha(0.5),
-    })
-    .insert(ButtonPressedStyle {
-      background: style_primary_hover.with_alpha(0.5),
-      border: style_border.with_alpha(0.2),
-    })
-    .insert(panel(style_primary, style_primary_hover))
-    .observe(observe_submit_click);
-  let submit_label = commands.spawn_scene(label("Submit Feedback")).id();
-  commands
-    .entity(submit_label)
-    .insert(ChildOf(submit_button))
-    .insert(TextColor(style_text_primary));
+      border: {style_border.with_alpha(0.5)},
+    }
+    ButtonPressedStyle {
+      background: {style_primary_hover.with_alpha(0.5)},
+      border: {style_border.with_alpha(0.2)},
+    }
+    @panel(style_primary, style_primary_hover)
+    on(observe_submit_click)
+    Node {
+      border: UiRect::all(Val::Px(2.0)),
+      padding: UiRect::axes(Val::Px(14.0), Val::Px(10.0)),
+      border_radius: BorderRadius::all(Val::Px(8.0)),
+    }
+    Children [
+      @label("Submit Feedback")
+      TextColor(style_text_primary)
+    ]
+    ]
+  });
 }
 
 /// Replaces the submitted form with its thank-you message.
@@ -563,23 +477,20 @@ pub(crate) fn show_thank_you(
   }
 
   for (entity, mut node) in &mut panels {
+    let thank_you_message = props.thank_you_message.clone();
+    let success = styles.success;
     node.align_items = AlignItems::Center;
     node.justify_content = JustifyContent::Center;
-    commands
-      .entity(entity)
-      .despawn_children()
-      .insert(FeedbackThankYou)
-      .with_children(|parent| {
-        parent.spawn((
-          Text::new(props.thank_you_message.clone()),
-          TextLayout::justify(Justify::Center),
-          TextFont {
-            font_size: FontSize::Px(22.0),
-            ..default()
-          },
-          TextColor(styles.success),
-        ));
-      });
+    commands.entity(entity).despawn_children().insert(FeedbackThankYou);
+    commands.spawn_scene(bsn! {
+      ChildOf(entity)
+      Text::new(thank_you_message)
+      TextLayout::justify(Justify::Center)
+      TextFont {
+        font_size: FontSize::Px(22.0),
+      }
+      TextColor(success)
+    });
   }
 }
 
@@ -595,17 +506,22 @@ pub fn error_sync(form: Res<FeedbackFormState>, mut q: Query<&mut Text, With<Err
 mod tests {
   use super::*;
 
-  #[test]
-  fn message_field_is_registered_as_multiline_text_input() {
+  fn feedback_app(props: FeedbackPanelProps) -> App {
     let mut app = App::new();
     app
       .add_plugins((MinimalPlugins, AssetPlugin::default(), bevy::scene::ScenePlugin))
       .init_asset::<Font>()
       .init_resource::<FeedbackPanelStyles>()
-      .init_resource::<FeedbackPanelProps>()
+      .insert_resource(props)
       .init_resource::<FeedbackFormState>()
       .add_systems(Startup, spawn_feedback_ui);
     app.update();
+    app
+  }
+
+  #[test]
+  fn message_field_is_registered_as_multiline_text_input() {
+    let mut app = feedback_app(FeedbackPanelProps::default());
 
     let mut query = app
       .world_mut()
@@ -614,5 +530,102 @@ mod tests {
     assert!(is_text_input);
     assert!(editable.allow_newlines);
     assert_eq!(editable.max_characters, Some(1000));
+  }
+
+  #[test]
+  fn default_panel_spawns_categories_and_styled_controls() {
+    let mut app = feedback_app(FeedbackPanelProps::default());
+    let root = app
+      .world_mut()
+      .query_filtered::<Entity, With<FeedbackPanel>>()
+      .single(app.world())
+      .unwrap();
+    let mut body_query = app
+      .world_mut()
+      .query_filtered::<(Entity, &ChildOf), With<FeedbackPanelBody>>();
+    let (body, parent) = body_query.single(app.world()).unwrap();
+    assert_eq!(parent.parent(), root);
+
+    let mut list_query = app
+      .world_mut()
+      .query_filtered::<(Entity, &Node, &ChildOf), With<CategoryList>>();
+    let (list, node, parent) = list_query.single(app.world()).unwrap();
+    assert_eq!(parent.parent(), body);
+    assert_eq!(node.display, Display::None);
+    let mut items = app.world_mut().query::<(&CategoryItem, &ChildOf)>();
+    let categories: Vec<_> = items
+      .iter(app.world())
+      .map(|(item, parent)| {
+        assert_eq!(parent.parent(), list);
+        item.0
+      })
+      .collect();
+    assert_eq!(categories, FeedbackCategory::ALL);
+
+    let mut buttons = app
+      .world_mut()
+      .query_filtered::<(&Hovered, &ButtonHoverStyle, &ButtonPressedStyle), With<Button>>();
+    assert_eq!(buttons.iter(app.world()).count(), FeedbackCategory::ALL.len() + 4);
+    let mut toggle = app
+      .world_mut()
+      .query_filtered::<Has<HoldPressed>, With<ScreenshotToggle>>();
+    assert!(toggle.single(app.world()).unwrap());
+  }
+
+  #[test]
+  fn question_panel_omits_category_and_screenshot_controls() {
+    let mut app = feedback_app(FeedbackPanelProps::with_question("How was the level?", FeedbackCategory::Gameplay));
+    let mut question = app.world_mut().query_filtered::<&Text, With<QuestionTextRoot>>();
+    assert_eq!(question.single(app.world()).unwrap().0, "How was the level?");
+    let mut optional_controls = app
+      .world_mut()
+      .query_filtered::<Entity, Or<(With<CategoryButton>, With<CategoryList>, With<ScreenshotToggle>)>>();
+    assert_eq!(optional_controls.iter(app.world()).count(), 0);
+    let form = app.world().resource::<FeedbackFormState>();
+    assert_eq!(form.category, FeedbackCategory::Gameplay);
+    assert_eq!(form.question.as_deref(), Some("How was the level?"));
+  }
+
+  #[test]
+  fn respawning_panel_removes_old_hierarchy_and_resets_form() {
+    let mut app = feedback_app(FeedbackPanelProps::default());
+    let mut nodes = app.world_mut().query_filtered::<Entity, With<Node>>();
+    let old_nodes: Vec<_> = nodes.iter(app.world()).collect();
+    app.world_mut().resource_mut::<FeedbackFormState>().message = "Unsent feedback".to_string();
+    app.add_systems(Update, spawn_feedback_ui);
+    app.update();
+
+    assert!(old_nodes.iter().all(|entity| app.world().get_entity(*entity).is_err()));
+    let mut roots = app.world_mut().query_filtered::<Entity, With<FeedbackPanel>>();
+    assert_eq!(roots.iter(app.world()).count(), 1);
+    assert!(app.world().resource::<FeedbackFormState>().message.is_empty());
+  }
+
+  #[test]
+  fn thank_you_replaces_form_once_and_preserves_panel_body() {
+    let mut app = feedback_app(FeedbackPanelProps::default().thank_you_message("Feedback received"));
+    let body = app
+      .world_mut()
+      .query_filtered::<Entity, With<FeedbackPanelBody>>()
+      .single(app.world())
+      .unwrap();
+    app.world_mut().resource_mut::<FeedbackFormState>().thank_you_remaining = Some(std::time::Duration::from_secs(2));
+    app.add_systems(Update, show_thank_you);
+    app.update();
+
+    assert!(app.world().get::<FeedbackThankYou>(body).is_some());
+    let children = app.world().get::<Children>(body).unwrap();
+    assert_eq!(children.len(), 1);
+    let text_entity = children[0];
+    assert_eq!(app.world().get::<Text>(text_entity).unwrap().0, "Feedback received");
+    assert_eq!(
+      app.world().get::<TextColor>(text_entity).unwrap().0,
+      app.world().resource::<FeedbackPanelStyles>().success
+    );
+    let mut inputs = app.world_mut().query_filtered::<Entity, With<MessageInput>>();
+    assert_eq!(inputs.iter(app.world()).count(), 0);
+
+    app.update();
+    assert_eq!(app.world().get::<Children>(body).unwrap()[0], text_entity);
   }
 }
