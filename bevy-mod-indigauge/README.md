@@ -320,7 +320,7 @@ fn track_counter(mut counter: Local<u32>) {
 
 | bevy   | bevy-mod-indigauge |
 | ------ | ------------------ |
-| 0.20   | Unreleased         |
+| 0.20   | 0.8                |
 | 0.19   | 0.7                |
 | 0.18   | 0.6                |
 | 0.17   | 0.5                |
